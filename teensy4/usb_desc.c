@@ -1426,12 +1426,12 @@ PROGMEM const uint8_t usb_config_descriptor_480[CONFIG_DESC_SIZE] = {
 	0x24,					// bDescriptorType, 0x24 = CS_INTERFACE
 	0x02,					// bDescriptorSubType, 2 = INPUT_TERMINAL
 	1,					// bTerminalID
-	//0x01, 0x02,				// wTerminalType, 0x0201 = MICROPHONE
+	0x01, 0x02,				// wTerminalType, 0x0201 = MICROPHONE
 	//0x03, 0x06,				// wTerminalType, 0x0603 = Line Connector
-	0x02, 0x06,				// wTerminalType, 0x0602 = Digital Audio
+	// 0x02, 0x06,				// wTerminalType, 0x0602 = Digital Audio
 	0,					// bAssocTerminal, 0 = unidirectional
-	2,					// bNrChannels
-	0x03, 0x00,				// wChannelConfig, 0x0003 = Left & Right Front
+	1,					// bNrChannels
+	0x00, 0x00,				// wChannelConfig, 0x0003 = Left & Right Front
 	0,					// iChannelNames
 	0, 					// iTerminal
 	// Output Terminal Descriptor
@@ -2440,12 +2440,12 @@ PROGMEM const uint8_t usb_config_descriptor_12[CONFIG_DESC_SIZE] = {
 	0x24,					// bDescriptorType, 0x24 = CS_INTERFACE
 	0x02,					// bDescriptorSubType, 2 = INPUT_TERMINAL
 	1,					// bTerminalID
-	//0x01, 0x02,				// wTerminalType, 0x0201 = MICROPHONE
+	0x01, 0x02,				// wTerminalType, 0x0201 = MICROPHONE
 	//0x03, 0x06,				// wTerminalType, 0x0603 = Line Connector
-	0x02, 0x06,				// wTerminalType, 0x0602 = Digital Audio
+	// 0x02, 0x06,				// wTerminalType, 0x0602 = Digital Audio
 	0,					// bAssocTerminal, 0 = unidirectional
-	2,					// bNrChannels
-	0x03, 0x00,				// wChannelConfig, 0x0003 = Left & Right Front
+	1,					// bNrChannels
+	0x00, 0x00,				// wChannelConfig, 0x0003 = Left & Right Front
 	0,					// iChannelNames
 	0, 					// iTerminal
 	// Output Terminal Descriptor
