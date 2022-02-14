@@ -37,7 +37,6 @@
 #include "imxrt.h"
 #include "avr_functions.h"
 #include "avr/pgmspace.h"
-#include "AudioStream.h"
 
 // At very slow CPU speeds, the OCRAM just isn't fast enough for
 // USB to work reliably.  But the precious/limited DTCM is.  So
@@ -70,9 +69,8 @@
 //   USB Device
 // **************************************************************
 
-#define LSB(n) ((int)(n) & 255)
-#define MSB(n) (((int)(n) >> 8) & 255)
-#define HSB(n) (((int)(n) >> 16) & 255)
+#define LSB(n) ((n) & 255)
+#define MSB(n) (((n) >> 8) & 255)
 
 #ifdef CDC_IAD_DESCRIPTOR
 #ifndef DEVICE_CLASS
@@ -1426,12 +1424,12 @@ PROGMEM const uint8_t usb_config_descriptor_480[CONFIG_DESC_SIZE] = {
 	0x24,					// bDescriptorType, 0x24 = CS_INTERFACE
 	0x02,					// bDescriptorSubType, 2 = INPUT_TERMINAL
 	1,					// bTerminalID
-	0x01, 0x02,				// wTerminalType, 0x0201 = MICROPHONE
+	//0x01, 0x02,				// wTerminalType, 0x0201 = MICROPHONE
 	//0x03, 0x06,				// wTerminalType, 0x0603 = Line Connector
-	// 0x02, 0x06,				// wTerminalType, 0x0602 = Digital Audio
+	0x02, 0x06,				// wTerminalType, 0x0602 = Digital Audio
 	0,					// bAssocTerminal, 0 = unidirectional
-	1,					// bNrChannels
-	0x00, 0x00,				// wChannelConfig, 0x0003 = Left & Right Front
+	2,					// bNrChannels
+	0x03, 0x00,				// wChannelConfig, 0x0003 = Left & Right Front
 	0,					// iChannelNames
 	0, 					// iTerminal
 	// Output Terminal Descriptor
@@ -1518,7 +1516,7 @@ PROGMEM const uint8_t usb_config_descriptor_480[CONFIG_DESC_SIZE] = {
 	2,					// bSubFrameSize = 2 byte
 	16,					// bBitResolution = 16 bits
 	1,					// bSamFreqType = 1 frequency
-	LSB(AUDIO_SAMPLE_RATE_EXACT), MSB(AUDIO_SAMPLE_RATE_EXACT), HSB(AUDIO_SAMPLE_RATE_EXACT),// tSamp
+	LSB(44100), MSB(44100), 0,		// tSamFreq
 	// Standard AS Isochronous Audio Data Endpoint Descriptor
 	// USB DCD for Audio Devices 1.0, Section 4.6.1.1, Table 4-20, page 61-62
 	9, 					// bLength
@@ -1577,7 +1575,7 @@ PROGMEM const uint8_t usb_config_descriptor_480[CONFIG_DESC_SIZE] = {
 	2,					// bSubFrameSize = 2 byte
 	16,					// bBitResolution = 16 bits
 	1,					// bSamFreqType = 1 frequency
-	LSB(AUDIO_SAMPLE_RATE_EXACT), MSB(AUDIO_SAMPLE_RATE_EXACT), HSB(AUDIO_SAMPLE_RATE_EXACT),// tSamp
+	LSB(44100), MSB(44100), 0,		// tSamFreq
 	// Standard AS Isochronous Audio Data Endpoint Descriptor
 	// USB DCD for Audio Devices 1.0, Section 4.6.1.1, Table 4-20, page 61-62
 	9, 					// bLength
@@ -2440,12 +2438,12 @@ PROGMEM const uint8_t usb_config_descriptor_12[CONFIG_DESC_SIZE] = {
 	0x24,					// bDescriptorType, 0x24 = CS_INTERFACE
 	0x02,					// bDescriptorSubType, 2 = INPUT_TERMINAL
 	1,					// bTerminalID
-	0x01, 0x02,				// wTerminalType, 0x0201 = MICROPHONE
+	//0x01, 0x02,				// wTerminalType, 0x0201 = MICROPHONE
 	//0x03, 0x06,				// wTerminalType, 0x0603 = Line Connector
-	// 0x02, 0x06,				// wTerminalType, 0x0602 = Digital Audio
+	0x02, 0x06,				// wTerminalType, 0x0602 = Digital Audio
 	0,					// bAssocTerminal, 0 = unidirectional
-	1,					// bNrChannels
-	0x00, 0x00,				// wChannelConfig, 0x0003 = Left & Right Front
+	2,					// bNrChannels
+	0x03, 0x00,				// wChannelConfig, 0x0003 = Left & Right Front
 	0,					// iChannelNames
 	0, 					// iTerminal
 	// Output Terminal Descriptor
@@ -2532,7 +2530,7 @@ PROGMEM const uint8_t usb_config_descriptor_12[CONFIG_DESC_SIZE] = {
 	2,					// bSubFrameSize = 2 byte
 	16,					// bBitResolution = 16 bits
 	1,					// bSamFreqType = 1 frequency
-	LSB(AUDIO_SAMPLE_RATE_EXACT), MSB(AUDIO_SAMPLE_RATE_EXACT), HSB(AUDIO_SAMPLE_RATE_EXACT),// tSamp
+	LSB(44100), MSB(44100), 0,		// tSamFreq
 	// Standard AS Isochronous Audio Data Endpoint Descriptor
 	// USB DCD for Audio Devices 1.0, Section 4.6.1.1, Table 4-20, page 61-62
 	9, 					// bLength
@@ -2591,7 +2589,7 @@ PROGMEM const uint8_t usb_config_descriptor_12[CONFIG_DESC_SIZE] = {
 	2,					// bSubFrameSize = 2 byte
 	16,					// bBitResolution = 16 bits
 	1,					// bSamFreqType = 1 frequency
-	LSB(AUDIO_SAMPLE_RATE_EXACT), MSB(AUDIO_SAMPLE_RATE_EXACT), HSB(AUDIO_SAMPLE_RATE_EXACT),// tSamp
+	LSB(44100), MSB(44100), 0,		// tSamFreq
 	// Standard AS Isochronous Audio Data Endpoint Descriptor
 	// USB DCD for Audio Devices 1.0, Section 4.6.1.1, Table 4-20, page 61-62
 	9, 					// bLength
