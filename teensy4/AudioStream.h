@@ -58,6 +58,10 @@
 #define AUDIO_SAMPLE_RATE_EXACT 44100.0f
 #endif
 
+#ifndef AUDIO_INPUT_CHANNEL_NUMBER
+#define AUDIO_INPUT_CHANNEL_NUMBER 1
+#endif
+
 #define AUDIO_SAMPLE_RATE AUDIO_SAMPLE_RATE_EXACT
 
 #if defined(__cplusplus)

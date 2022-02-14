@@ -52,39 +52,30 @@ Each group of #define lines below corresponds to one of the
 settings in the Tools > USB Type menu.  This file defines what
 type of USB device is actually created for each of those menu
 options.
-
 Each "interface" is a set of functionality your PC or Mac will
 use and treat as if it is a unique device.  Within each interface,
 the "endpoints" are the actual communication channels.  Most
 interfaces use 1, 2 or 3 endpoints.  By editing only this file,
 you can customize the USB Types to be any collection of interfaces.
-
 To modify a USB Type, delete the XYZ_INTERFACE lines for any
 interfaces you wish to remove, and copy them from another USB Type
 for any you want to add.
-
 Give each interface a unique number, and edit NUM_INTERFACE to
 reflect the total number of interfaces.
-
 Next, assign unique endpoint numbers to all the endpoints across
 all the interfaces your device has.  You can reuse an endpoint
 number for transmit and receive, but the same endpoint number must
 not be used twice to transmit, or twice to receive.
-
 Most endpoints also require their maximum size, and some also
 need an interval specification (the number of milliseconds the
 PC will check for data from that endpoint).  For existing
 interfaces, usually these other settings should not be changed.
-
 Edit NUM_ENDPOINTS to be at least the largest endpoint number used.
-
 Edit the ENDPOINT*_CONFIG lines so each endpoint is configured
 the proper way (transmit, receive, or both).
-
 If you are using existing interfaces (making your own device with
 a different set of interfaces) the code in all other files should
 automatically adapt to the new endpoints you specify here.
-
 If you need to create a new type of interface, you'll need to write
 the code which sends and receives packets, and presents an API to
 the user.  Usually, a pair of files are added for the actual code,
@@ -94,24 +85,109 @@ from the packet send/receive functons.  Code also is added in
 usb_inst.c to create an instance of your C++ object.  This message
 gives a quick summary of things you will need to know:
 https://forum.pjrc.com/threads/49045?p=164512&viewfull=1#post164512
-
 You may edit the Vendor and Product ID numbers, and strings.  If
 the numbers are changed, Teensyduino may not be able to automatically
 find and reboot your board when you click the Upload button in
 the Arduino IDE.  You will need to press the Program button on
 Teensy to initiate programming.
-
 Some operating systems, especially Windows, may cache USB device
 info.  Changes to the device name may not update on the same
 computer unless the vendor or product ID numbers change, or the
 "bcdDevice" revision code is increased.
-
 If these instructions are missing steps or could be improved, please
 let me know?  http://forum.pjrc.com/forums/4-Suggestions-amp-Bug-Reports
 */
 
+#if  defined(USB_MIC)
+  #define VENDOR_ID		           0x16C0
+  #define PRODUCT_ID		       0x04D6
+  #define BCD_DEVICE		       0x0214
+  #define MANUFACTURER_NAME	       {'T','e','e','n','s','y','d','u','i','n','o'}
+  #define MANUFACTURER_NAME_LEN	   11
+  #define PRODUCT_NAME		       {'T','e','e','n','s','y',' ','M','i','c','r','o'}
+  #define PRODUCT_NAME_LEN	       12
+  #define NUM_ENDPOINTS         1 //ok
+  //#define SAMPLE_RATE	           0x07A120 //500 000
+  #define MAX_POWER	               0xF0 // (23mA unit)
+  #define CHANNEL_NUMBER           1  //mono
+  #define AUDIO_TX_SIZE         ((int)((AUDIO_SAMPLE_RATE_EXACT + 900) / 1000) * 2 * CHANNEL_NUMBER)//2 instead of 4 because mono  (sample_rate*byte_number)/1000
+  #define NUM_INTERFACE            2 //needed for function usb_config_descriptor_480 and usb_config_descriptor_12
+  #define USB_MIC_INTERFACE        1 //needed for 'USB Descriptor Sizes' part
+  #define TRANSFER_TYPE            0x80
+  #define SEREMU_INTERFACE      0	// Serial emulation
+  #define SEREMU_TX_ENDPOINT    0
+  #define SEREMU_TX_SIZE        64
+  #define SEREMU_TX_INTERVAL    1
+  #define SEREMU_RX_ENDPOINT    0
+  #define SEREMU_RX_SIZE        32
+  #define SEREMU_RX_INTERVAL    2
+  #define EP0_SIZE		64
+  #define AUDIO_SYNC_ENDPOINT	0
+  #define AUDIO_TX_ENDPOINT     1
+  // #define AUDIO_RX_ENDPOINT     0
+  // #define AUDIO_RX_SIZE         AUDIO_TX_SIZE
+  // #define ENDPOINT1_CONFIG	ENDPOINT_TRANSMIT_ISOCHRONOUS //found on teensy3 first audio dev
+  #define ENDPOINT4_CONFIG	ENDPOINT_RECEIVE_UNUSED + ENDPOINT_TRANSMIT_ISOCHRONOUS
 
-#if defined(USB_SERIAL)
+
+ 
+
+#elif defined(USB_AUDIO)
+  // #define VENDOR_ID		0x16C0
+  // #define PRODUCT_ID		0x04D3
+  // #define BCD_DEVICE		       0x0214
+  // #define MANUFACTURER_NAME	{'T','e','e','n','s','y','d','u','i','n','o'}
+  // #define MANUFACTURER_NAME_LEN	11
+  // #define PRODUCT_NAME		{'T','e','e','n','s','y',' ','A','u','d','i','o'}
+  // #define PRODUCT_NAME_LEN	12
+  // #define EP0_SIZE		64
+  // #define NUM_ENDPOINTS         4
+  // #define NUM_INTERFACE		4
+  // #define SEREMU_INTERFACE      0	// Serial emulation
+  // #define SEREMU_INTERFAC2E     0  //test
+  // #define SEREMU_TX_ENDPOINT    2
+  // #define SEREMU_TX_SIZE        64
+  // #define SEREMU_TX_INTERVAL    1
+  // #define SEREMU_RX_ENDPOINT    2
+  // #define SEREMU_RX_SIZE        32
+  // #define SEREMU_RX_INTERVAL    2
+  // #define AUDIO_INTERFACE	1	// Audio (uses 3 consecutive interfaces)
+  // #define AUDIO_TX_ENDPOINT     3
+  // #define AUDIO_TX_SIZE         ((int)((AUDIO_SAMPLE_RATE_EXACT + 900) / 1000) * 2 * AUDIO_INPUT_CHANNEL_NUMBER) //2 = 16bits
+  // #define AUDIO_RX_ENDPOINT     3
+  // #define AUDIO_RX_SIZE         AUDIO_TX_SIZE
+  // #define AUDIO_SYNC_ENDPOINT	4
+  // #define ENDPOINT2_CONFIG	ENDPOINT_RECEIVE_INTERRUPT + ENDPOINT_TRANSMIT_INTERRUPT
+  // #define ENDPOINT3_CONFIG	ENDPOINT_RECEIVE_ISOCHRONOUS + ENDPOINT_TRANSMIT_ISOCHRONOUS
+  // #define ENDPOINT4_CONFIG	ENDPOINT_RECEIVE_UNUSED + ENDPOINT_TRANSMIT_ISOCHRONOUS
+    #define VENDOR_ID		0x16C0
+  #define PRODUCT_ID		0x04D2
+  #define MANUFACTURER_NAME	{'T','e','e','n','s','y','d','u','i','n','o'}
+  #define MANUFACTURER_NAME_LEN	11
+  #define PRODUCT_NAME		{'T','e','e','n','s','y',' ','A','u','d','i','o'}
+  #define PRODUCT_NAME_LEN	12
+  #define EP0_SIZE		64
+  #define NUM_ENDPOINTS         4
+  #define NUM_INTERFACE		4
+  #define SEREMU_INTERFACE      0	// Serial emulation
+  #define SEREMU_INTERFAC2E     0  //test
+  #define SEREMU_TX_ENDPOINT    2
+  #define SEREMU_TX_SIZE        64
+  #define SEREMU_TX_INTERVAL    1
+  #define SEREMU_RX_ENDPOINT    2
+  #define SEREMU_RX_SIZE        32
+  #define SEREMU_RX_INTERVAL    2
+  #define AUDIO_INTERFACE	1	// Audio (uses 3 consecutive interfaces)
+  #define AUDIO_TX_ENDPOINT     3
+  #define AUDIO_TX_SIZE         ((int)((AUDIO_SAMPLE_RATE_EXACT + 900) / 1000) * 2 * AUDIO_INPUT_CHANNEL_NUMBER) //2 = 16bits
+  #define AUDIO_RX_ENDPOINT     3
+  #define AUDIO_RX_SIZE         AUDIO_TX_SIZE
+  #define AUDIO_SYNC_ENDPOINT	4
+  #define ENDPOINT2_CONFIG	ENDPOINT_RECEIVE_INTERRUPT + ENDPOINT_TRANSMIT_INTERRUPT
+  #define ENDPOINT3_CONFIG	ENDPOINT_RECEIVE_ISOCHRONOUS + ENDPOINT_TRANSMIT_ISOCHRONOUS
+  #define ENDPOINT4_CONFIG	ENDPOINT_RECEIVE_UNUSED + ENDPOINT_TRANSMIT_ISOCHRONOUS
+
+#elif defined(USB_SERIAL)
   #define VENDOR_ID		0x16C0
   #define PRODUCT_ID		0x0483
   #define MANUFACTURER_NAME	{'T','e','e','n','s','y','d','u','i','n','o'}
@@ -684,7 +760,7 @@ let me know?  http://forum.pjrc.com/forums/4-Suggestions-amp-Bug-Reports
   #define EP0_SIZE		64
   #define NUM_ENDPOINTS         4
   #define NUM_INTERFACE		2
-  #define MTP_INTERFACE		1	// MTP Disk
+  #define MTP_INTERFACE		0	// MTP Disk
   #define MTP_TX_ENDPOINT	3
   #define MTP_TX_SIZE_12	64
   #define MTP_TX_SIZE_480	512
@@ -695,7 +771,7 @@ let me know?  http://forum.pjrc.com/forums/4-Suggestions-amp-Bug-Reports
   #define MTP_EVENT_SIZE	32
   #define MTP_EVENT_INTERVAL_12	10	// 10 = 10 ms
   #define MTP_EVENT_INTERVAL_480 7	// 7 = 8 ms
-  #define SEREMU_INTERFACE      0	// Serial emulation
+  #define SEREMU_INTERFACE      1	// Serial emulation
   #define SEREMU_TX_ENDPOINT    2
   #define SEREMU_TX_SIZE        64
   #define SEREMU_TX_INTERVAL    1
@@ -706,32 +782,6 @@ let me know?  http://forum.pjrc.com/forums/4-Suggestions-amp-Bug-Reports
   #define ENDPOINT3_CONFIG	ENDPOINT_RECEIVE_BULK + ENDPOINT_TRANSMIT_BULK
   #define ENDPOINT4_CONFIG  ENDPOINT_RECEIVE_UNUSED + ENDPOINT_TRANSMIT_INTERRUPT
 
-#elif defined(USB_AUDIO)
-  #define VENDOR_ID		0x16C0
-  #define PRODUCT_ID		0x04D2
-  #define MANUFACTURER_NAME	{'T','e','e','n','s','y','d','u','i','n','o'}
-  #define MANUFACTURER_NAME_LEN	11
-  #define PRODUCT_NAME		{'T','e','e','n','s','y',' ','A','u','d','i','o'}
-  #define PRODUCT_NAME_LEN	12
-  #define EP0_SIZE		64
-  #define NUM_ENDPOINTS         4
-  #define NUM_INTERFACE		4
-  #define SEREMU_INTERFACE      0	// Serial emulation
-  #define SEREMU_TX_ENDPOINT    2
-  #define SEREMU_TX_SIZE        64
-  #define SEREMU_TX_INTERVAL    1
-  #define SEREMU_RX_ENDPOINT    2
-  #define SEREMU_RX_SIZE        32
-  #define SEREMU_RX_INTERVAL    2
-  #define AUDIO_INTERFACE	1	// Audio (uses 3 consecutive interfaces)
-  #define AUDIO_TX_ENDPOINT     3
-  #define AUDIO_TX_SIZE         ((int)((AUDIO_SAMPLE_RATE_EXACT + 900) / 1000) * 4)
-  #define AUDIO_RX_ENDPOINT     3
-  #define AUDIO_RX_SIZE         AUDIO_TX_SIZE
-  #define AUDIO_SYNC_ENDPOINT	4
-  #define ENDPOINT2_CONFIG	ENDPOINT_RECEIVE_INTERRUPT + ENDPOINT_TRANSMIT_INTERRUPT
-  #define ENDPOINT3_CONFIG	ENDPOINT_RECEIVE_ISOCHRONOUS + ENDPOINT_TRANSMIT_ISOCHRONOUS
-  #define ENDPOINT4_CONFIG	ENDPOINT_RECEIVE_UNUSED + ENDPOINT_TRANSMIT_ISOCHRONOUS
 
 #elif defined(USB_MIDI_AUDIO_SERIAL)
   #define VENDOR_ID		0x16C0
@@ -764,9 +814,9 @@ let me know?  http://forum.pjrc.com/forums/4-Suggestions-amp-Bug-Reports
   #define MIDI_RX_SIZE_480      512
   #define AUDIO_INTERFACE	3	// Audio (uses 3 consecutive interfaces)
   #define AUDIO_TX_ENDPOINT     5
-  #define AUDIO_TX_SIZE         180
+  #define AUDIO_TX_SIZE         ((int)((AUDIO_SAMPLE_RATE_EXACT + 900) / 1000) * 4)
   #define AUDIO_RX_ENDPOINT     5
-  #define AUDIO_RX_SIZE         180
+  #define AUDIO_RX_SIZE         AUDIO_TX_SIZE
   #define AUDIO_SYNC_ENDPOINT	6
   #define ENDPOINT2_CONFIG	ENDPOINT_RECEIVE_UNUSED + ENDPOINT_TRANSMIT_INTERRUPT
   #define ENDPOINT3_CONFIG	ENDPOINT_RECEIVE_BULK + ENDPOINT_TRANSMIT_BULK
@@ -816,6 +866,7 @@ let me know?  http://forum.pjrc.com/forums/4-Suggestions-amp-Bug-Reports
   #define ENDPOINT5_CONFIG	ENDPOINT_RECEIVE_ISOCHRONOUS + ENDPOINT_TRANSMIT_ISOCHRONOUS
   #define ENDPOINT6_CONFIG	ENDPOINT_RECEIVE_UNUSED + ENDPOINT_TRANSMIT_ISOCHRONOUS
 
+  
 #elif defined(USB_EVERYTHING)
   #define VENDOR_ID		0x16C0
   #define PRODUCT_ID		0x0476
@@ -929,4 +980,3 @@ typedef struct {
 extern const usb_descriptor_list_t usb_descriptor_list[];
 #endif // NUM_ENDPOINTS
 #endif // USB_DESC_LIST_DEFINE
-
