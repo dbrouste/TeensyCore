@@ -1,17 +1,20 @@
+
+
 #include "usb_dev.h"
 #define USB_DESC_LIST_DEFINE
 #include "usb_desc.h"
 #include "usb_serial.h"
 #include "usb_seremu.h"
 #include "usb_rawhid.h"
-#include "usb_keyboard.h"
+//#include "usb_keyboard.h"
 #include "usb_mouse.h"
 #include "usb_joystick.h"
 #include "usb_flightsim.h"
 #include "usb_touch.h"
 #include "usb_midi.h"
 #include "usb_audio.h"
-#include "usb_mtp.h"
+#include "usb_mic.h"
+#include "usb_mtp.h"									
 #include "core_pins.h" // for delay()
 #include "avr/pgmspace.h"
 #include <string.h>
@@ -63,7 +66,7 @@ struct endpoint_struct {
 uint8_t experimental_buffer[1152] __attribute__ ((section(".dmabuffers"), aligned(64)));
 #endif
 
-endpoint_t endpoint_queue_head[(NUM_ENDPOINTS+1)*2] __attribute__ ((used, aligned(4096), section(".endpoint_queue") ));
+endpoint_t endpoint_queue_head[(NUM_ENDPOINTS+1)*2] __attribute__ ((used, aligned(4096)));
 
 transfer_t endpoint0_transfer_data __attribute__ ((used, aligned(32)));
 transfer_t endpoint0_transfer_ack  __attribute__ ((used, aligned(32)));
@@ -482,6 +485,9 @@ static void endpoint0_setup(uint64_t setupdata)
 		#if defined(AUDIO_INTERFACE)
 		usb_audio_configure();
 		#endif
+		#if defined(USB_MIC_INTERFACE)
+		usb_mic_configure();
+		#endif
 		#if defined(MTP_INTERFACE)
 		usb_mtp_configure();
 		#endif
@@ -610,6 +616,7 @@ static void endpoint0_setup(uint64_t setupdata)
 		}
 		break;
 #endif
+
 #if defined(AUDIO_INTERFACE)
 	  case 0x0B01: // SET_INTERFACE (alternate setting)
 		if (setup.wIndex == AUDIO_INTERFACE+1) {
@@ -670,34 +677,73 @@ static void endpoint0_setup(uint64_t setupdata)
 		}
 		break;
 #endif
-#if defined(MTP_INTERFACE)
-	  case 0x6421: // Cancel Request, Still Image Class 1.0, 5.2.1, page 8
-		if (setup.wLength == 6) {
-			endpoint0_setupdata.bothwords = setupdata;
-			endpoint0_receive(endpoint0_buffer, setup.wLength, 1);
+
+#if defined(USB_MIC_INTERFACE)
+	  case 0x0B01: // SET_INTERFACE (alternate setting)
+		if (setup.wIndex == USB_MIC_INTERFACE+1) {
+			usb_audio_transmit_setting = setup.wValue;
+			if (usb_audio_transmit_setting > 0) {
+				// TODO: set up AUDIO_TX_ENDPOINT to transmit
+			}
+			endpoint0_receive(NULL, 0, 0);
+			return;
+		} else if (setup.wIndex == USB_MIC_INTERFACE+2) {
+			usb_audio_receive_setting = setup.wValue;
+			endpoint0_receive(NULL, 0, 0);
 			return;
 		}
 		break;
-	  case 0x65A1: // Get Extended Event Data, Still Image Class 1.0, 5.2.2, page 9
+	  case 0x0A81: // GET_INTERFACE (alternate setting)
+		if (setup.wIndex == USB_MIC_INTERFACE+1) {
+			endpoint0_buffer[0] = usb_audio_transmit_setting;
+			endpoint0_transmit(endpoint0_buffer, 1, 0);
+			return;
+		} else if (setup.wIndex == USB_MIC_INTERFACE+2) {
+			endpoint0_buffer[0] = usb_audio_receive_setting;
+			endpoint0_transmit(endpoint0_buffer, 1, 0);
+			return;
+		}
 		break;
-	  case 0x6621: // Device Reset, Still Image Class 1.0, 5.2.3 page 10
+	  case 0x0121: // SET FEATURE
+	  case 0x0221:
+	  case 0x0321:
+	  case 0x0421:
+		//printf("set_feature, word1=%x, len=%d\n", setup.word1, setup.wLength);
+		if (setup.wLength <= sizeof(endpoint0_buffer)) {
+			endpoint0_setupdata.bothwords = setupdata;
+			endpoint0_receive(endpoint0_buffer, setup.wLength, 1);
+			return; // handle these after ACK
+		}
 		break;
-	  case 0x67A1: // Get Device Status, Still Image Class 1.0, 5.2.4, page 10
-		if (setup.wLength >= 4) {
-			endpoint0_buffer[0] = 4;
-			endpoint0_buffer[1] = 0;
-			endpoint0_buffer[2] = usb_mtp_status;
-			endpoint0_buffer[3] = 0x20;
-			endpoint0_transmit(endpoint0_buffer, 4, 0);
-			//if (usb_mtp_status == 0x19) usb_mtp_status = 0x01; // testing only
+	  case 0x81A1: // GET FEATURE
+	  case 0x82A1:
+	  case 0x83A1:
+	  case 0x84A1:
+		// if (setup.wLength <= sizeof(endpoint0_buffer)) {
+		// 	uint32_t len;
+		// 	if (usb_audio_get_feature(&setup, endpoint0_buffer, &len)) {
+		// 		//printf("GET feature, len=%d\n", len);
+		// 		endpoint0_transmit(endpoint0_buffer, len, 0);
+		// 		return;
+		// 	}
+		// }
+		break;
+	  case 0x81A2: // GET_CUR (wValue=0, wIndex=interface, wLength=len)
+		if (setup.wLength >= 3) {
+			endpoint0_buffer[0] = ((int)(AUDIO_SAMPLE_RATE_EXACT)) & 0xff;
+			endpoint0_buffer[1] = (((int)(AUDIO_SAMPLE_RATE_EXACT)) >> 8) & 0xff;
+			endpoint0_buffer[2] = (((int)(AUDIO_SAMPLE_RATE_EXACT)) >> 16) & 0xff;
+			endpoint0_transmit(endpoint0_buffer, 3, 0);
 			return;
 		}
 		break;
 #endif
+
+
 	}
-	printf("endpoint 0 stall\n");
 	USB1_ENDPTCTRL0 = 0x000010001; // stall
 }
+
 
 static void endpoint0_transmit(const void *data, uint32_t len, int notify)
 {
@@ -824,16 +870,12 @@ static void endpoint0_complete(void)
 	}
 #endif
 #ifdef SEREMU_INTERFACE
-	if (setup.word1 == 0x03000921 && setup.word2 == ((4<<16)|SEREMU_INTERFACE)) {
-		if (endpoint0_buffer[0] == 0xA9 && endpoint0_buffer[1] == 0x45
-		  && endpoint0_buffer[2] == 0xC2 && endpoint0_buffer[3] == 0x6B) {
-			printf("seremu reboot request\n");
-			usb_start_sof_interrupts(NUM_INTERFACE);
-			usb_reboot_timer = 80; // TODO: 10 if only 12 Mbit/sec
-		} else {
-			// any other feature report means Arduino Serial Monitor is open
-			usb_seremu_online = 1;
-		}
+	if (setup.word1 == 0x03000921 && setup.word2 == ((4<<16)|SEREMU_INTERFACE)
+	  && endpoint0_buffer[0] == 0xA9 && endpoint0_buffer[1] == 0x45
+	  && endpoint0_buffer[2] == 0xC2 && endpoint0_buffer[3] == 0x6B) {
+		printf("seremu reboot request\n");
+		usb_start_sof_interrupts(NUM_INTERFACE);
+		usb_reboot_timer = 80; // TODO: 10 if only 12 Mbit/sec
 	}
 #endif
 #ifdef AUDIO_INTERFACE
@@ -841,18 +883,12 @@ static void endpoint0_complete(void)
 		usb_audio_set_feature(&endpoint0_setupdata, endpoint0_buffer);
 	}
 #endif
-#ifdef MTP_INTERFACE
-	if (setup.wRequestAndType == 0x6421) {
-		if (endpoint0_buffer[0] == 0x01 && endpoint0_buffer[1] == 0x40) {
-			printf("MTP cancel, transaction ID=%08X\n",
-			  endpoint0_buffer[2] | (endpoint0_buffer[3] << 8) |
-			  (endpoint0_buffer[4] << 16) | (endpoint0_buffer[5] << 24));
-			usb_mtp_status = 0x19; // 0x19 = host initiated cancel
-		}
+#ifdef USB_MIC_INTERFACE
+	if (setup.word1 == 0x02010121 || setup.word1 == 0x01000121 /* TODO: check setup.word2 */) {
+		usb_audio_set_feature(&endpoint0_setupdata, endpoint0_buffer);
 	}
 #endif
 }
-
 static void usb_endpoint_config(endpoint_t *qh, uint32_t config, void (*callback)(transfer_t *))
 {
 	memset(qh, 0, sizeof(endpoint_t));
@@ -953,10 +989,6 @@ static void schedule_transfer(endpoint_t *endpoint, uint32_t epmask, transfer_t 
 		//USB1_USBCMD &= ~USB_USBCMD_ATDTW;
 		if (status & epmask) goto end;
 		//ret |= 0x02;
-		endpoint->next = (uint32_t)transfer;
-		endpoint->status = 0;
-		USB1_ENDPTPRIME |= epmask;
-		goto end;
 	}
 	//digitalWriteFast(4, HIGH);
 	endpoint->next = (uint32_t)transfer;

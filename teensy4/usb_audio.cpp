@@ -98,7 +98,7 @@ void usb_audio_configure(void)
 	if (usb_high_speed) {
 		usb_audio_sync_nbytes = 4;
 		usb_audio_sync_rshift = 8;
-	} else {
+	} else  {
 		usb_audio_sync_nbytes = 3;
 		usb_audio_sync_rshift = 10;
 	}
@@ -391,7 +391,7 @@ unsigned int usb_audio_transmit_callback(void)
 {
 	
 	uint32_t avail, num, target, offset, len=0;
-		audio_block_t *left, *right;	
+	audio_block_t *left, *right;	
 	const int ctarget = ((int)(AUDIO_SAMPLE_RATE_EXACT)) / 1000;	
         if ((int)(AUDIO_SAMPLE_RATE_EXACT) == 44100 || 
 	    (int)(AUDIO_SAMPLE_RATE_EXACT) == 88200 || 
@@ -404,7 +404,7 @@ unsigned int usb_audio_transmit_callback(void)
 			count = 0;
 		}
 	} else target = ctarget;
-
+	
 	while (len < target) {
 		num = target - len;
 		left = AudioOutputUSB::left_1st;

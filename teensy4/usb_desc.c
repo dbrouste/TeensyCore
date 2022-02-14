@@ -29,6 +29,9 @@
  */
 
 //#if F_CPU >= 20000000
+//#pragma message "pweeeeeeeeeeeeeeeeeeet usb_desc.c"
+
+
 
 #define USB_DESC_LIST_DEFINE
 #include "usb_desc.h"
@@ -590,7 +593,7 @@ static uint8_t flightsim_report_desc[] = {
 #endif
 
 #define SEREMU_INTERFACE_DESC_POS	FLIGHTSIM_INTERFACE_DESC_POS+FLIGHTSIM_INTERFACE_DESC_SIZE
-#ifdef  SEREMU_INTERFACE
+#ifdef SEREMU_INTERFACE
 #define SEREMU_INTERFACE_DESC_SIZE	9+9+7+7
 #define SEREMU_HID_DESC_OFFSET		SEREMU_INTERFACE_DESC_POS+9
 #else
@@ -627,7 +630,14 @@ static uint8_t flightsim_report_desc[] = {
 #define AUDIO_INTERFACE_DESC_SIZE	0
 #endif
 
-#define MULTITOUCH_INTERFACE_DESC_POS	AUDIO_INTERFACE_DESC_POS+AUDIO_INTERFACE_DESC_SIZE
+#define USB_MIC_INTERFACE_DESC_POS	AUDIO_INTERFACE_DESC_POS+AUDIO_INTERFACE_DESC_SIZE
+#ifdef  USB_MIC_INTERFACE
+#define USB_MIC_INTERFACE_DESC_SIZE	9+9+12+9+9+9+9+7+11+9+7
+#else
+#define USB_MIC_INTERFACE_DESC_SIZE	0
+#endif
+
+#define MULTITOUCH_INTERFACE_DESC_POS	USB_MIC_INTERFACE_DESC_POS+USB_MIC_INTERFACE_DESC_SIZE
 #ifdef  MULTITOUCH_INTERFACE
 #define MULTITOUCH_INTERFACE_DESC_SIZE	9+9+7
 #define MULTITOUCH_HID_DESC_OFFSET	MULTITOUCH_INTERFACE_DESC_POS+9
@@ -643,8 +653,9 @@ static uint8_t flightsim_report_desc[] = {
 #define EXPERIMENTAL_INTERFACE_DESC_SIZE 0
 #endif
 
-#define CONFIG_DESC_SIZE		EXPERIMENTAL_INTERFACE_DESC_POS+EXPERIMENTAL_INTERFACE_DESC_SIZE
+																						  
 
+#define CONFIG_DESC_SIZE		EXPERIMENTAL_INTERFACE_DESC_POS+EXPERIMENTAL_INTERFACE_DESC_SIZE
 
 
 // **************************************************************
@@ -664,7 +675,8 @@ PROGMEM const uint8_t usb_config_descriptor_480[CONFIG_DESC_SIZE] = {
         1,                                      // bConfigurationValue
         0,                                      // iConfiguration
         0xC0,                                   // bmAttributes
-        50,                                     // bMaxPower
+        0xC8,                                     // bMaxPower
+
 
 #ifdef CDC_IAD_DESCRIPTOR
         // interface association descriptor, USB ECN, Table 9-Z
@@ -1334,7 +1346,7 @@ PROGMEM const uint8_t usb_config_descriptor_480[CONFIG_DESC_SIZE] = {
         0x06,                                   // bInterfaceClass (0x06 = still image)
         0x01,                                   // bInterfaceSubClass
         0x01,                                   // bInterfaceProtocol
-        4,                                      // iInterface
+        0,                                      // iInterface
         // endpoint descriptor, USB spec 9.6.6, page 269-271, Table 9-13
         7,                                      // bLength
         5,                                      // bDescriptorType
@@ -1426,12 +1438,12 @@ PROGMEM const uint8_t usb_config_descriptor_480[CONFIG_DESC_SIZE] = {
 	0x24,					// bDescriptorType, 0x24 = CS_INTERFACE
 	0x02,					// bDescriptorSubType, 2 = INPUT_TERMINAL
 	1,					// bTerminalID
-	//0x01, 0x02,				// wTerminalType, 0x0201 = MICROPHONE
+	0x01, 0x02,				// wTerminalType, 0x0201 = MICROPHONE
 	//0x03, 0x06,				// wTerminalType, 0x0603 = Line Connector
-	0x02, 0x06,				// wTerminalType, 0x0602 = Digital Audio
+	//0x02, 0x06,				// wTerminalType, 0x0602 = Digital Audio
 	0,					// bAssocTerminal, 0 = unidirectional
-	2,					// bNrChannels
-	0x03, 0x00,				// wChannelConfig, 0x0003 = Left & Right Front
+	1,					// bNrChannels
+      0x00, 0x00,				// wChannelConfig, 0x0003 = Left & Right Front
 	0,					// iChannelNames
 	0, 					// iTerminal
 	// Output Terminal Descriptor
@@ -1608,7 +1620,140 @@ PROGMEM const uint8_t usb_config_descriptor_480[CONFIG_DESC_SIZE] = {
 	0,					// bSynchAddress
 #endif
 
+#ifdef USB_MIC_INTERFACE
+	// configuration for 480 Mbit/sec speed
+//Configuration for microphone mono 16bits
+
+// Table B-1: USB Microphone Device Descriptor p106
+//Done in function device_descriptor()
+ 
+//Table B-2: USB Microphone Configuration Descriptor
+//Done in function usb_config_descriptor_480()
+ 
+//Table B-3: USB Microphone Standard AC Interface Descriptor
+      9,        // bLength = Size of this descriptor, in bytes. 
+      4,        // bDescriptorType = INTERFACE descriptor. 
+      0,        // bInterfaceNumber = Index of this interface. 
+      0,        // bAlternateSetting = Index of this setting. 
+      0,        // bNumEndpoints = 0 endpoints. 
+      1,        // bInterfaceClass = AUDIO. 
+      1,        // bInterfaceSubclass = AUDIO_CONTROL. 
+      0,        // bInterfaceProtocol = Unused. 
+      0,        // iInterface = Unused. sed. 
+ 
+//Table B-4: USB Microphone Class-specific AC Interface Descriptor
+9,        // bLength = Size of this descriptor, in bytes. 
+0x24,        // bDescriptorType = CS_INTERFACE. 
+0x01,        // bDescriptorSubtype = HEADER subtype. 
+0x00, 0x01,	      // bcdADC = Revision of class specification - 1.0 
+LSB(39), MSB(39),      // wTotalLength = Total size of class specific descriptors. 
+0x01,        // bInCollection = Number of streaming interfaces. 
+0x01,        // baInterfaceNr(1) = AudioStreaming interface 1 belongs to this AudioControl interface. 
+ 
+//Table B-5: USB Microphone Input Terminal Descriptor
+12,        // bLength = Size of this descriptor, in bytes. 
+0x24,        // bDescriptorType = CS_INTERFACE. 
+0x02,        // bDescriptorSubtype = INPUT_TERMINAL subtype. 
+0x01,        // bTerminalID = ID of this Input Terminal. 
+0x01,0x02,      // wTerminalType = Terminal is Microphone. 0x0201
+0x00,        // bAssocTerminal = No association. 
+AUDIO_INPUT_CHANNEL_NUMBER,        // bNrChannels = One channel.
+0x00,0x00,      // wChannelConfig = Mono sets no position bits. 
+0x00,        // iChannelNames = Unused. 
+0x00,        // iTerminal = Unused 
+ 
+// Volume feature descriptor
+9,					// bLength
+0x24, 				// bDescriptorType = CS_INTERFACE
+0x06, 				// bDescriptorSubType = FEATURE_UNIT
+0x02, 				// bUnitID
+0x01, 				// bSourceID (Input Terminal)
+0x02, 				// bControlSize: bmaControls are one byte size
+0x01, 				// bmaControls(0): controls for master channel (mute, volume)
+0x00, 				// controls for channel 1 (no controls)
+0x00,				// iFeature
+
+//Table B-6: USB Microphone Output Terminal Descriptor
+9,        // bLength = Size of this descriptor, in bytes. 
+0x24,        // bDescriptorType = CS_INTERFACE. 
+0x03,        // bDescriptorSubtype = OUTPUT_TERMINAL subtype. 
+0x03,        // bTerminalID = ID of this Output Terminal. 
+0x01, 0x01,      // wTerminalType = USB Streaming. 
+0x00,        // bAssocTerminal = Unused. 
+0x02,        // bSourceID = From Input Terminal. 
+0x00,        // iTerminal = Unused. 
+
+
+ 
+//Table B-7: USB Microphone Standard AS Interface Descriptor (Alt. Set. 0)
+9,        // bLength = Size of this descriptor, in bytes. 
+0x04,        // bDescriptorType = INTERFACE descriptor. 
+0x01,        // bInterfaceNumber = Index of this interface. 
+0x00,        // bAlternateSetting = Index of this alternate setting. 
+0x00,        // bNumEndpoints = 0 endpoints. 
+0x01,        // bInterfaceClass = AUDIO. 
+0x02,        // bInterfaceSubclass = AUDIO_STREAMING. 
+0x00,        // bInterfaceProtocol = Unused. 
+0x00,        // iInterface = Unused. 
+ 
+//Table B-8: USB Microphone Standard AS Interface Descriptor
+9,        // bLength = Size of this descriptor, in bytes. 
+0x04,        // bDescriptorType = INTERFACE descriptor. 
+0x01,        // bInterfaceNumber = Index of this interface. 
+0x01,        // bAlternateSetting = Index of this alternate setting. 
+0x01,        // bNumEndpoints = One endpoint. 
+0x01,        // bInterfaceClass = AUDIO. 
+0x02,        // bInterfaceSubclass = AUDIO_STREAMING. 
+0x00,        // bInterfaceProtocol = Unused. 
+0x00,        // iInterface = Unused. 
+ 
+//Table B-9: USB Microphone Class-specific AS General Interface Descriptor
+7,        // bLength = Size of this descriptor, in bytes. 
+0x24,        // bDescriptorType = CS_INTERFACE descriptor. 
+0x01,        // bDescriptorSubtype = GENERAL subtype. 
+0x03,        // bTerminalLink = Unit ID of the Output Terminal. 
+0x01,        // bDelay = Interface delay. 
+0x01,0x00,      // wFormatTag = PCM Format. 
+ 
+//Table B-10: USB Microphone Type I Format Type Descriptor
+11,        // bLength = Size of this descriptor, in bytes. 
+0x24,        // bDescriptorType = CS_INTERFACE descriptor. 
+0x02,        // bDescriptorSubtype = FORMAT_TYPE subtype. 
+0x01,        // bFormatType = FORMAT_TYPE_I. 
+AUDIO_INPUT_CHANNEL_NUMBER,        // bNrChannels = One channel.
+0x02,        // bSubFrameSize = Two bytes per audio subframe. 
+0x10,        // bBitResolution = 16 bits per sample. 
+0x01,        // bSamFreqType = One frequency supported. 
+LSB(AUDIO_SAMPLE_RATE_EXACT), MSB(AUDIO_SAMPLE_RATE_EXACT), HSB(AUDIO_SAMPLE_RATE_EXACT),        // tSamFreq = Sample rate. 
+ 
+//Table B-11: USB Microphone Standard Endpoint Descriptor
+9,        // bLength = Size of this descriptor, in bytes. 
+0x05,        // bDescriptorType = ENDPOINT descriptor. 
+0x81,        // bEndpointAddress = IN Endpoint 1. 
+0x0D,        // bmAttributes = Isochronous, not shared. 
+LSB(AUDIO_TX_SIZE),MSB(AUDIO_TX_SIZE),        // wMaxPacketSize = 16 bytes per packet. 
+0x04,        // bInterval, 4 = every 8 micro-frames
+0x00,        // bRefresh = Unused. 
+0x00,        // bSynchAddress = Unused. 
+ 
+//Table B-12: USB Microphone Class-specific Isoc. Audio Data Endpoint Descriptor
+7,        // bLength = Size of this descriptor, in bytes. 
+0x25,        // bDescriptorType = CS_ENDPOINT descriptor 
+0x01,        // bDescriptorSubtype = GENERAL subtype. 
+0x00,        // bmAttributes = No sampling frequency control, no pitch control, no packet padding. 
+0x00,        // bLockDelayUnits = Unused. 
+0x00, 0x00,      // wLockDelay = Unused. 
+ 
+//Table B-13: USB Microphone Manufacturer String Descriptor 
+//Done in usb_string_descriptor_struct usb_string_manufacturer_name_default
+ 
+//Table B-14: USB Microphone Product String Descriptor 
+//Done in usb_string_descriptor_struct usb_string_product_name_default
+#endif //USB_MIC
+
+
 #ifdef MULTITOUCH_INTERFACE
+
 	// configuration for 480 Mbit/sec speed
         // interface descriptor, USB spec 9.6.5, page 267-269, Table 9-12
         9,                                      // bLength
@@ -1678,7 +1823,9 @@ PROGMEM const uint8_t usb_config_descriptor_12[CONFIG_DESC_SIZE] = {
         1,                                      // bConfigurationValue
         0,                                      // iConfiguration
         0xC0,                                   // bmAttributes
-        50,                                     // bMaxPower
+        0xC8,                                     // bMaxPower
+
+
 
 #ifdef CDC_IAD_DESCRIPTOR
         // interface association descriptor, USB ECN, Table 9-Z
@@ -2440,12 +2587,12 @@ PROGMEM const uint8_t usb_config_descriptor_12[CONFIG_DESC_SIZE] = {
 	0x24,					// bDescriptorType, 0x24 = CS_INTERFACE
 	0x02,					// bDescriptorSubType, 2 = INPUT_TERMINAL
 	1,					// bTerminalID
-	//0x01, 0x02,				// wTerminalType, 0x0201 = MICROPHONE
+	0x01, 0x02,				// wTerminalType, 0x0201 = MICROPHONE
 	//0x03, 0x06,				// wTerminalType, 0x0603 = Line Connector
-	0x02, 0x06,				// wTerminalType, 0x0602 = Digital Audio
+	//0x02, 0x06,				// wTerminalType, 0x0602 = Digital Audio
 	0,					// bAssocTerminal, 0 = unidirectional
-	2,					// bNrChannels
-	0x03, 0x00,				// wChannelConfig, 0x0003 = Left & Right Front
+	1,					// bNrChannels
+	0x00, 0x00,				// wChannelConfig, 0x0003 = Left & Right Front
 	0,					// iChannelNames
 	0, 					// iTerminal
 	// Output Terminal Descriptor
@@ -2591,7 +2738,7 @@ PROGMEM const uint8_t usb_config_descriptor_12[CONFIG_DESC_SIZE] = {
 	2,					// bSubFrameSize = 2 byte
 	16,					// bBitResolution = 16 bits
 	1,					// bSamFreqType = 1 frequency
-	LSB(AUDIO_SAMPLE_RATE_EXACT), MSB(AUDIO_SAMPLE_RATE_EXACT), HSB(AUDIO_SAMPLE_RATE_EXACT),// tSamp
+	LSB(AUDIO_SAMPLE_RATE_EXACT), MSB(AUDIO_SAMPLE_RATE_EXACT), HSB(AUDIO_SAMPLE_RATE_EXACT),// tSamp	
 	// Standard AS Isochronous Audio Data Endpoint Descriptor
 	// USB DCD for Audio Devices 1.0, Section 4.6.1.1, Table 4-20, page 61-62
 	9, 					// bLength
@@ -2621,6 +2768,138 @@ PROGMEM const uint8_t usb_config_descriptor_12[CONFIG_DESC_SIZE] = {
 	5,					// bRefresh, 5 = 32ms
 	0,					// bSynchAddress
 #endif
+
+#ifdef USB_MIC_INTERFACE
+	// configuration for 12 Mbit/sec speed
+//Configuration for microphone mono 16bits 500000kHz samplerate
+
+// Table B-1: USB Microphone Device Descriptor p106
+//Done in function device_descriptor()
+ 
+//Table B-2: USB Microphone Configuration Descriptor
+//Done in function usb_config_descriptor_12()
+
+ 
+//Table B-3: USB Microphone Standard AC Interface Descriptor
+9,        // bLength = Size of this descriptor, in bytes. 
+0x04,        // bDescriptorType = INTERFACE descriptor. 
+0x00,        // bInterfaceNumber = Index of this interface. 
+0x00,        // bAlternateSetting = Index of this setting. 
+0x00,        // bNumEndpoints = 0 endpoints. 
+0x01,        // bInterfaceClass = AUDIO. 
+0x01,        // bInterfaceSubclass = AUDIO_CONTROL. 
+0x00,        // bInterfaceProtocol = Unused. 
+0x00,        // iInterface = Unused. 
+ 
+//Table B-4: USB Microphone Class-specific AC Interface Descriptor
+9,        // bLength = Size of this descriptor, in bytes. 
+0x24,        // bDescriptorType = CS_INTERFACE. 
+0x01,        // bDescriptorSubtype = HEADER subtype. 
+0x00, 0x01,      // bcdADC = Revision of class specification - 1.0 
+LSB(39), MSB(39),      // wTotalLength = Total size of class specific descriptors. 
+0x01,        // bInCollection = Number of streaming interfaces. 
+0x01,        // baInterfaceNr(1) = AudioStreaming interface 1 belongs to this AudioControl interface. 
+ 
+//Table B-5: USB Microphone Input Terminal Descriptor
+12,        // bLength = Size of this descriptor, in bytes. 
+0x24,        // bDescriptorType = CS_INTERFACE. 
+0x02,        // bDescriptorSubtype = INPUT_TERMINAL subtype. 
+0x01,        // bTerminalID = ID of this Input Terminal. 
+0x01, 0x02,      // wTerminalType = Terminal is Microphone. 
+0x00,        // bAssocTerminal = No association. 
+AUDIO_INPUT_CHANNEL_NUMBER,        // bNrChannels = One channel.
+0x00,0x00,      // wChannelConfig = Mono sets no position bits. 
+0x00,        // iChannelNames = Unused. 
+0x00,        // iTerminal = Unused 
+ 
+// Volume feature descriptor
+9,					// bLength
+0x24, 				// bDescriptorType = CS_INTERFACE
+0x06, 				// bDescriptorSubType = FEATURE_UNIT
+0x02, 				// bUnitID
+0x01, 				// bSourceID (Input Terminal)
+0x02, 				// bControlSize: bmaControls are one byte size
+0x01, 				// bmaControls(0): controls for master channel (mute, volume)
+0x00, 				// controls for channel 1 (no controls)
+0x00,				// iFeature
+
+//Table B-6: USB Microphone Output Terminal Descriptor
+9,        // bLength = Size of this descriptor, in bytes. 
+0x24,        // bDescriptorType = CS_INTERFACE. 
+0x03,        // bDescriptorSubtype = OUTPUT_TERMINAL subtype. 
+0x03,        // bTerminalID = ID of this Output Terminal. 
+0x01, 0x01,      // wTerminalType = USB Streaming. 
+0x00,        // bAssocTerminal = Unused. 
+0x02,        // bSourceID = From Input Terminal. 
+0x00,        // iTerminal = Unused. 
+
+
+ 
+//Table B-7: USB Microphone Standard AS Interface Descriptor (Alt. Set. 0)
+9,        // bLength = Size of this descriptor, in bytes. 
+0x04,        // bDescriptorType = INTERFACE descriptor. 
+0x01,        // bInterfaceNumber = Index of this interface. 
+0x00,        // bAlternateSetting = Index of this alternate setting. 
+0x00,        // bNumEndpoints = 0 endpoints. 
+0x01,        // bInterfaceClass = AUDIO. 
+0x02,        // bInterfaceSubclass = AUDIO_STREAMING. 
+0x00,        // bInterfaceProtocol = Unused. 
+0x00,        // iInterface = Unused. 
+ 
+//Table B-8: USB Microphone Standard AS Interface Descriptor
+9,        // bLength = Size of this descriptor, in bytes. 
+0x04,        // bDescriptorType = INTERFACE descriptor. 
+0x01,        // bInterfaceNumber = Index of this interface. 
+0x01,        // bAlternateSetting = Index of this alternate setting. 
+0x01,        // bNumEndpoints = One endpoint. 
+0x01,        // bInterfaceClass = AUDIO. 
+0x02,        // bInterfaceSubclass = AUDIO_STREAMING. 
+0x00,        // bInterfaceProtocol = Unused. 
+0x00,        // iInterface = Unused. 
+ 
+//Table B-9: USB Microphone Class-specific AS General Interface Descriptor
+7,        // bLength = Size of this descriptor, in bytes. 
+0x24,        // bDescriptorType = CS_INTERFACE descriptor. 
+0x01,        // bDescriptorSubtype = GENERAL subtype. 
+0x03,        // bTerminalLink = Unit ID of the Output Terminal. 
+0x00,        // bDelay = Interface delay. 
+0x01, 0x00,      // wFormatTag = PCM Format. 
+ 
+//Table B-10: USB Microphone Type I Format Type Descriptor
+11,        // bLength = Size of this descriptor, in bytes. 
+0x24,        // bDescriptorType = CS_INTERFACE descriptor. 
+0x02,        // bDescriptorSubtype = FORMAT_TYPE subtype. 
+0x01,        // bFormatType = FORMAT_TYPE_I. 
+AUDIO_INPUT_CHANNEL_NUMBER,        // bNrChannels = One channel.
+0x02,        // bSubFrameSize = Two bytes per audio subframe. 
+0x10,        // bBitResolution = 16 bits per sample. 
+0x01,        // bSamFreqType = One frequency supported. 
+LSB(AUDIO_SAMPLE_RATE_EXACT), MSB(AUDIO_SAMPLE_RATE_EXACT), HSB(AUDIO_SAMPLE_RATE_EXACT),        // tSamFreq = Sample rate. 
+ 
+//Table B-11: USB Microphone Standard Endpoint Descriptor
+9,        // bLength = Size of this descriptor, in bytes. 
+0x05,        // bDescriptorType = ENDPOINT descriptor. 
+0x81,        // bEndpointAddress = IN Endpoint 1. 
+0x0D,        // bmAttributes = Isochronous, not shared. 
+LSB(AUDIO_TX_SIZE),MSB(AUDIO_TX_SIZE),        // wMaxPacketSize = 16 bytes per packet. 
+0x01,        // bInterval = One packet per frame. 
+0x00,        // bRefresh = Unused. 
+0x00,        // bSynchAddress = Unused. 
+ 
+//Table B-12: USB Microphone Class-specific Isoc. Audio Data Endpoint Descriptor
+7,        // bLength = Size of this descriptor, in bytes. 
+0x25,        // bDescriptorType = CS_ENDPOINT descriptor 
+0x01,        // bDescriptorSubtype = GENERAL subtype. 
+0x00,        // bmAttributes = No sampling frequency control, no pitch control, no packet padding. 
+0x00,        // bLockDelayUnits = Unused. 
+0x00,0x00,      // wLockDelay = Unused. 
+ 
+//Table B-13: USB Microphone Manufacturer String Descriptor 
+//Done in usb_string_descriptor_struct usb_string_manufacturer_name_default
+ 
+//Table B-14: USB Microphone Product String Descriptor 
+//Done in usb_string_descriptor_struct usb_string_product_name_default
+#endif //USB_MIC
 
 #ifdef MULTITOUCH_INTERFACE
 	// configuration for 12 Mbit/sec speed

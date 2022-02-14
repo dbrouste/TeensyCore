@@ -102,12 +102,9 @@ int Print::printf(const char *format, ...)
 	va_list ap;
 	va_start(ap, format);
 #ifdef __STRICT_ANSI__
-	va_end(ap);
 	return 0;  // TODO: make this work with -std=c++0x
 #else
-	int retval = vdprintf((int)this, format, ap);
-	va_end(ap);
-	return retval;
+	return vdprintf((int)this, format, ap);
 #endif
 }
 
@@ -116,12 +113,9 @@ int Print::printf(const __FlashStringHelper *format, ...)
 	va_list ap;
 	va_start(ap, format);
 #ifdef __STRICT_ANSI__
-	va_end(ap);
 	return 0;
 #else
-	int retval = vdprintf((int)this, (const char *)format, ap);
-	va_end(ap);
-	return retval;
+	return vdprintf((int)this, (const char *)format, ap);
 #endif
 }
 

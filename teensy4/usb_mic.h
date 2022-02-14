@@ -49,7 +49,7 @@ extern "C"
 	extern void usb_audio_receive_callback(unsigned int len);
 	extern unsigned int usb_audio_transmit_callback(void);
 	extern int usb_audio_set_feature(void *stp, uint8_t *buf);
-	extern int usb_audio_get_feature(void *stp, uint8_t *data, uint32_t *datalen);
+	//extern int usb_audio_get_feature(void *stp, uint8_t *data, uint32_t *datalen);
 #ifdef __cplusplus
 }
 #endif
