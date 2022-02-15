@@ -1,3 +1,6 @@
+
+
+
 #include "usb_dev.h"
 #define USB_DESC_LIST_DEFINE
 #include "usb_desc.h"
@@ -11,11 +14,13 @@
 #include "usb_touch.h"
 #include "usb_midi.h"
 #include "usb_audio.h"
+#include "usb_mic.h"
 #include "usb_mtp.h"
 #include "core_pins.h" // for delay()
 #include "avr/pgmspace.h"
 #include <string.h>
 #include "debug/printf.h"
+#include "AudioStream.h"
 
 //#define LOG_SIZE  20
 //uint32_t transfer_log_head=0;
@@ -481,6 +486,9 @@ static void endpoint0_setup(uint64_t setupdata)
 		#if defined(AUDIO_INTERFACE)
 		usb_audio_configure();
 		#endif
+		#if defined(USB_MIC_INTERFACE)
+		usb_mic_configure();
+		#endif
 		#if defined(MTP_INTERFACE)
 		usb_mtp_configure();
 		#endif
@@ -661,9 +669,71 @@ static void endpoint0_setup(uint64_t setupdata)
 		break;
 	  case 0x81A2: // GET_CUR (wValue=0, wIndex=interface, wLength=len)
 		if (setup.wLength >= 3) {
-			endpoint0_buffer[0] = 44100 & 255;
-			endpoint0_buffer[1] = 44100 >> 8;
-			endpoint0_buffer[2] = 0;
+			endpoint0_buffer[0] = ((int)(AUDIO_SAMPLE_RATE_EXACT)) & 0xff;
+			endpoint0_buffer[1] = (((int)(AUDIO_SAMPLE_RATE_EXACT)) >> 8) & 0xff;
+			endpoint0_buffer[2] = (((int)(AUDIO_SAMPLE_RATE_EXACT)) >> 16) & 0xff;
+			endpoint0_transmit(endpoint0_buffer, 3, 0);
+			return;
+		}
+		break;
+#endif
+
+#if defined(USB_MIC_INTERFACE)
+	  case 0x0B01: // SET_INTERFACE (alternate setting)
+		if (setup.wIndex == USB_MIC_INTERFACE-1) {
+			usb_audio_transmit_setting = setup.wValue;
+			if (usb_audio_transmit_setting > 0) {
+			// digitalWrite(13,HIGH);
+				// TODO: set up AUDIO_TX_ENDPOINT to transmit
+			}
+			endpoint0_receive(NULL, 0, 0);
+			return;
+		} else if (setup.wIndex == USB_MIC_INTERFACE) {
+			usb_audio_receive_setting = setup.wValue;
+			endpoint0_receive(NULL, 0, 0);
+			return;
+		}
+		break;
+	  case 0x0A81: // GET_INTERFACE (alternate setting)
+		if (setup.wIndex == USB_MIC_INTERFACE-1) {
+			endpoint0_buffer[0] = usb_audio_transmit_setting;
+			endpoint0_transmit(endpoint0_buffer, 1, 0);
+			return;
+		} else if (setup.wIndex == USB_MIC_INTERFACE) {
+			endpoint0_buffer[0] = usb_audio_receive_setting;
+			endpoint0_transmit(endpoint0_buffer, 1, 0);
+			return;
+		}
+		break;
+	  case 0x0121: // SET FEATURE
+	  case 0x0221:
+	  case 0x0321:
+	  case 0x0421:
+		//printf("set_feature, word1=%x, len=%d\n", setup.word1, setup.wLength);
+		if (setup.wLength <= sizeof(endpoint0_buffer)) {
+			endpoint0_setupdata.bothwords = setupdata;
+			endpoint0_receive(endpoint0_buffer, setup.wLength, 1);
+			return; // handle these after ACK
+		}
+		break;
+	  case 0x81A1: // GET FEATURE
+	  case 0x82A1:
+	  case 0x83A1:
+	  case 0x84A1:
+		if (setup.wLength <= sizeof(endpoint0_buffer)) {
+			uint32_t len;
+			if (usb_audio_get_feature(&setup, endpoint0_buffer, &len)) {
+				//printf("GET feature, len=%d\n", len);
+				endpoint0_transmit(endpoint0_buffer, len, 0);
+				return;
+			}
+		}
+		break;
+	  case 0x81A2: // GET_CUR (wValue=0, wIndex=interface, wLength=len)
+		if (setup.wLength >= 3) {
+			endpoint0_buffer[0] = ((int)(AUDIO_SAMPLE_RATE_EXACT)) & 0xff;
+			endpoint0_buffer[1] = (((int)(AUDIO_SAMPLE_RATE_EXACT)) >> 8) & 0xff;
+			endpoint0_buffer[2] = (((int)(AUDIO_SAMPLE_RATE_EXACT)) >> 16) & 0xff;
 			endpoint0_transmit(endpoint0_buffer, 3, 0);
 			return;
 		}
@@ -812,6 +882,12 @@ static void endpoint0_complete(void)
 #endif
 #ifdef AUDIO_INTERFACE
 	if (setup.word1 == 0x02010121 || setup.word1 == 0x01000121 /* TODO: check setup.word2 */) {
+		usb_audio_set_feature(&endpoint0_setupdata, endpoint0_buffer);
+	}
+#endif
+#ifdef USB_MIC_INTERFACE
+	if (setup.word1 == 0x02010121 || setup.word1 == 0x01000121 /* TODO: check setup.word2 */) {
+
 		usb_audio_set_feature(&endpoint0_setupdata, endpoint0_buffer);
 	}
 #endif

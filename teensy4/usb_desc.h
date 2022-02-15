@@ -110,8 +110,69 @@ If these instructions are missing steps or could be improved, please
 let me know?  http://forum.pjrc.com/forums/4-Suggestions-amp-Bug-Reports
 */
 
+#if  defined(USB_MIC)
+  #define VENDOR_ID		           0x16C0
+  #define PRODUCT_ID		       0x04D6
+  #define BCD_DEVICE		       0x0214
+  #define MANUFACTURER_NAME	       {'T','e','e','n','s','y','d','u','i','n','o'}
+  #define MANUFACTURER_NAME_LEN	   11
+  #define PRODUCT_NAME		       {'T','e','e','n','s','y',' ','M','i','c','r','o'}
+  #define PRODUCT_NAME_LEN	       12
+  #define NUM_ENDPOINTS         1 //ok
+  //#define SAMPLE_RATE	           0x07A120 //500 000
+  #define MAX_POWER	               0xF0 // (23mA unit)
+  #define CHANNEL_NUMBER           1  //mono
+  #define AUDIO_TX_SIZE         ((int)((AUDIO_SAMPLE_RATE_EXACT + 900) / 1000) * 2 * CHANNEL_NUMBER)//2 instead of 4 because mono  (sample_rate*byte_number)/1000
+  #define NUM_INTERFACE            2 //needed for function usb_config_descriptor_480 and usb_config_descriptor_12
+  #define USB_MIC_INTERFACE        1 //needed for 'USB Descriptor Sizes' part
+  #define TRANSFER_TYPE            0x80
+  #define SEREMU_INTERFACE      0	// Serial emulation
+  #define SEREMU_TX_ENDPOINT    0
+  #define SEREMU_TX_SIZE        64
+  #define SEREMU_TX_INTERVAL    1
+  #define SEREMU_RX_ENDPOINT    0
+  #define SEREMU_RX_SIZE        32
+  #define SEREMU_RX_INTERVAL    2
+  #define EP0_SIZE		64
+  #define AUDIO_SYNC_ENDPOINT	0
+  #define AUDIO_TX_ENDPOINT     1
+  // #define AUDIO_RX_ENDPOINT     0
+  // #define AUDIO_RX_SIZE         AUDIO_TX_SIZE
+  // #define ENDPOINT1_CONFIG	ENDPOINT_TRANSMIT_ISOCHRONOUS //found on teensy3 first audio dev
+  #define ENDPOINT4_CONFIG	ENDPOINT_RECEIVE_UNUSED + ENDPOINT_TRANSMIT_ISOCHRONOUS
 
-#if defined(USB_SERIAL)
+
+
+
+#elif defined(USB_AUDIO)
+  #define VENDOR_ID		0x16C0
+  #define PRODUCT_ID		0x04D3
+  #define MANUFACTURER_NAME	{'T','e','e','n','s','y','d','u','i','n','o'}
+  #define MANUFACTURER_NAME_LEN	11
+  #define PRODUCT_NAME		{'T','e','e','n','s','y',' ','A','u','d','i','o'}
+  #define PRODUCT_NAME_LEN	12
+  #define EP0_SIZE		64
+  #define NUM_ENDPOINTS         4
+  #define NUM_INTERFACE		4
+  #define SEREMU_INTERFACE      0	// Serial emulation
+  #define SEREMU_INTERFAC2E     0  //test
+  #define SEREMU_TX_ENDPOINT    2
+  #define SEREMU_TX_SIZE        64
+  #define SEREMU_TX_INTERVAL    1
+  #define SEREMU_RX_ENDPOINT    2
+  #define SEREMU_RX_SIZE        32
+  #define SEREMU_RX_INTERVAL    2
+  #define AUDIO_INTERFACE	1	// Audio (uses 3 consecutive interfaces)
+  #define AUDIO_TX_ENDPOINT     3
+  #define AUDIO_TX_SIZE         ((int)((AUDIO_SAMPLE_RATE_EXACT + 900) / 1000) * 2 * AUDIO_INPUT_CHANNEL_NUMBER) //2 = 16bits
+  #define AUDIO_RX_ENDPOINT     3
+  #define AUDIO_RX_SIZE         AUDIO_TX_SIZE
+  #define AUDIO_SYNC_ENDPOINT	4
+  #define ENDPOINT2_CONFIG	ENDPOINT_RECEIVE_INTERRUPT + ENDPOINT_TRANSMIT_INTERRUPT
+  #define ENDPOINT3_CONFIG	ENDPOINT_RECEIVE_ISOCHRONOUS + ENDPOINT_TRANSMIT_ISOCHRONOUS
+  #define ENDPOINT4_CONFIG	ENDPOINT_RECEIVE_UNUSED + ENDPOINT_TRANSMIT_ISOCHRONOUS
+
+#elif defined(USB_SERIAL)
   #define VENDOR_ID		0x16C0
   #define PRODUCT_ID		0x0483
   #define MANUFACTURER_NAME	{'T','e','e','n','s','y','d','u','i','n','o'}
@@ -706,32 +767,6 @@ let me know?  http://forum.pjrc.com/forums/4-Suggestions-amp-Bug-Reports
   #define ENDPOINT3_CONFIG	ENDPOINT_RECEIVE_BULK + ENDPOINT_TRANSMIT_BULK
   #define ENDPOINT4_CONFIG  ENDPOINT_RECEIVE_UNUSED + ENDPOINT_TRANSMIT_INTERRUPT
 
-#elif defined(USB_AUDIO)
-  #define VENDOR_ID		0x16C0
-  #define PRODUCT_ID		0x04D2
-  #define MANUFACTURER_NAME	{'T','e','e','n','s','y','d','u','i','n','o'}
-  #define MANUFACTURER_NAME_LEN	11
-  #define PRODUCT_NAME		{'T','e','e','n','s','y',' ','A','u','d','i','o'}
-  #define PRODUCT_NAME_LEN	12
-  #define EP0_SIZE		64
-  #define NUM_ENDPOINTS         4
-  #define NUM_INTERFACE		4
-  #define SEREMU_INTERFACE      0	// Serial emulation
-  #define SEREMU_TX_ENDPOINT    2
-  #define SEREMU_TX_SIZE        64
-  #define SEREMU_TX_INTERVAL    1
-  #define SEREMU_RX_ENDPOINT    2
-  #define SEREMU_RX_SIZE        32
-  #define SEREMU_RX_INTERVAL    2
-  #define AUDIO_INTERFACE	1	// Audio (uses 3 consecutive interfaces)
-  #define AUDIO_TX_ENDPOINT     3
-  #define AUDIO_TX_SIZE         180
-  #define AUDIO_RX_ENDPOINT     3
-  #define AUDIO_RX_SIZE         180
-  #define AUDIO_SYNC_ENDPOINT	4
-  #define ENDPOINT2_CONFIG	ENDPOINT_RECEIVE_INTERRUPT + ENDPOINT_TRANSMIT_INTERRUPT
-  #define ENDPOINT3_CONFIG	ENDPOINT_RECEIVE_ISOCHRONOUS + ENDPOINT_TRANSMIT_ISOCHRONOUS
-  #define ENDPOINT4_CONFIG	ENDPOINT_RECEIVE_UNUSED + ENDPOINT_TRANSMIT_ISOCHRONOUS
 
 #elif defined(USB_MIDI_AUDIO_SERIAL)
   #define VENDOR_ID		0x16C0
@@ -764,9 +799,9 @@ let me know?  http://forum.pjrc.com/forums/4-Suggestions-amp-Bug-Reports
   #define MIDI_RX_SIZE_480      512
   #define AUDIO_INTERFACE	3	// Audio (uses 3 consecutive interfaces)
   #define AUDIO_TX_ENDPOINT     5
-  #define AUDIO_TX_SIZE         180
+  #define AUDIO_TX_SIZE         ((int)((AUDIO_SAMPLE_RATE_EXACT + 900) / 1000) * 4)
   #define AUDIO_RX_ENDPOINT     5
-  #define AUDIO_RX_SIZE         180
+  #define AUDIO_RX_SIZE         AUDIO_TX_SIZE
   #define AUDIO_SYNC_ENDPOINT	6
   #define ENDPOINT2_CONFIG	ENDPOINT_RECEIVE_UNUSED + ENDPOINT_TRANSMIT_INTERRUPT
   #define ENDPOINT3_CONFIG	ENDPOINT_RECEIVE_BULK + ENDPOINT_TRANSMIT_BULK
@@ -806,9 +841,9 @@ let me know?  http://forum.pjrc.com/forums/4-Suggestions-amp-Bug-Reports
   #define MIDI_RX_SIZE_480      512
   #define AUDIO_INTERFACE	3	// Audio (uses 3 consecutive interfaces)
   #define AUDIO_TX_ENDPOINT     5
-  #define AUDIO_TX_SIZE         180
+  #define AUDIO_TX_SIZE         ((int)((AUDIO_SAMPLE_RATE_EXACT + 900) / 1000) * 4)
   #define AUDIO_RX_ENDPOINT     5
-  #define AUDIO_RX_SIZE         180
+  #define AUDIO_RX_SIZE         AUDIO_TX_SIZE
   #define AUDIO_SYNC_ENDPOINT	6
   #define ENDPOINT2_CONFIG	ENDPOINT_RECEIVE_UNUSED + ENDPOINT_TRANSMIT_INTERRUPT
   #define ENDPOINT3_CONFIG	ENDPOINT_RECEIVE_BULK + ENDPOINT_TRANSMIT_BULK
@@ -888,9 +923,9 @@ let me know?  http://forum.pjrc.com/forums/4-Suggestions-amp-Bug-Reports
   #define KEYMEDIA_INTERVAL     4
   #define AUDIO_INTERFACE	9	// Audio (uses 3 consecutive interfaces)
   #define AUDIO_TX_ENDPOINT     13
-  #define AUDIO_TX_SIZE         180
+  #define AUDIO_TX_SIZE         ((int)((AUDIO_SAMPLE_RATE_EXACT + 900) / 1000) * 4)
   #define AUDIO_RX_ENDPOINT     13
-  #define AUDIO_RX_SIZE         180
+  #define AUDIO_RX_SIZE         AUDIO_TX_SIZE
   #define AUDIO_SYNC_ENDPOINT	14
   #define MULTITOUCH_INTERFACE  12	// Touchscreen
   #define MULTITOUCH_ENDPOINT   15
