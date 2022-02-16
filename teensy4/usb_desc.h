@@ -164,7 +164,7 @@ let me know?  http://forum.pjrc.com/forums/4-Suggestions-amp-Bug-Reports
   #define SEREMU_RX_INTERVAL    2
   #define AUDIO_INTERFACE	1	// Audio (uses 3 consecutive interfaces)
   #define AUDIO_TX_ENDPOINT     3
-  #define AUDIO_TX_SIZE         ((int)((AUDIO_SAMPLE_RATE_EXACT + 900) / 1000) * 2 * AUDIO_INPUT_CHANNEL_NUMBER) //2 = 16bits
+  #define AUDIO_TX_SIZE         ((int)((AUDIO_SAMPLE_RATE_EXACT + 900) / 1000) * 2 * AUDIO_T2USB_CHANNEL_NUMBER) //2 = 16bits
   #define AUDIO_RX_ENDPOINT     3
   #define AUDIO_RX_SIZE         AUDIO_TX_SIZE
   #define AUDIO_SYNC_ENDPOINT	4

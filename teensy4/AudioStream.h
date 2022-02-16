@@ -50,6 +50,7 @@
 //   AudioInputUSB, AudioOutputUSB, AudioPlaySdWav, AudioAnalyzeFFT256,
 //   AudioAnalyzeFFT1024
 
+
 #ifndef AUDIO_BLOCK_SAMPLES
 #define AUDIO_BLOCK_SAMPLES  128
 #endif
@@ -58,8 +59,8 @@
 #define AUDIO_SAMPLE_RATE_EXACT 44100.0f
 #endif
 
-#ifndef AUDIO_INPUT_CHANNEL_NUMBER
-#define AUDIO_INPUT_CHANNEL_NUMBER 1
+#ifndef AUDIO_T2USB_CHANNEL_NUMBER
+#define AUDIO_T2USB_CHANNEL_NUMBER 1
 #endif
 
 #define AUDIO_SAMPLE_RATE AUDIO_SAMPLE_RATE_EXACT

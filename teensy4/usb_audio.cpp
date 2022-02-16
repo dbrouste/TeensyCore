@@ -32,6 +32,7 @@
 #include "usb_dev.h"
 #include "usb_audio.h"
 #include "debug/printf.h"
+#include "AudioStream.h"
 
 #ifdef AUDIO_INTERFACE
 
@@ -294,7 +295,7 @@ audio_block_t * AudioOutputUSB::right_1st;
 audio_block_t * AudioOutputUSB::right_2nd;
 uint16_t AudioOutputUSB::offset_1st;
 
-/*DMAMEM*/ uint16_t usb_audio_transmit_buffer[AUDIO_TX_SIZE/2] __attribute__ ((used, aligned(32)));
+/*DMAMEM*/ uint16_t usb_audio_transmit_buffer[AUDIO_TX_SIZE/AUDIO_T2USB_CHANNEL_NUMBER] __attribute__ ((used, aligned(32)));
 
 
 static void tx_event(transfer_t *t)
