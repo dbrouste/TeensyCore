@@ -113,10 +113,10 @@ let me know?  http://forum.pjrc.com/forums/4-Suggestions-amp-Bug-Reports
 #if  defined(USB_MIC)
   #define VENDOR_ID		           0x16C0
   #define PRODUCT_ID		       0x04D6
-  #define BCD_DEVICE		       0x0214
+  #define BCD_DEVICE		       0x0215
   #define MANUFACTURER_NAME	       {'T','e','e','n','s','y','d','u','i','n','o'}
   #define MANUFACTURER_NAME_LEN	   11
-  #define PRODUCT_NAME		       {'T','e','e','n','s','y',' ','M','i','c','r','o'}
+  #define PRODUCT_NAME		       {'T','e','e','n','s','y','D','M','i','c','r','o'}
   #define PRODUCT_NAME_LEN	       12
   #define NUM_ENDPOINTS         1 //ok
   //#define SAMPLE_RATE	           0x07A120 //500 000

@@ -34,8 +34,6 @@
 #include "debug/printf.h"
 #include "AudioStream.h"
 
-//#define HWSERIAL Serial1
-
 #ifdef USB_MIC_INTERFACE
 
 bool AudioInputUSBMic::update_responsibility;
@@ -66,8 +64,9 @@ uint8_t usb_audio_sync_rshift;
 
 uint32_t feedback_accumulator;
 
-// volatile uint32_t usb_audio_underrun_count;
-// volatile uint32_t usb_audio_overrun_count;
+volatile uint32_t usb_audio_underrun_count;
+volatile uint32_t usb_audio_overrun_count;
+
 
 // static void rx_event(transfer_t *t)
 // {
@@ -81,35 +80,35 @@ uint32_t feedback_accumulator;
 // 	usb_receive(AUDIO_RX_ENDPOINT, &rx_transfer);
 // }
 
-// static void sync_event(transfer_t *t)
-// {
-// 	// USB 2.0 Specification, 5.12.4.2 Feedback, pages 73-75
-// 	//printf("sync %x\n", sync_transfer.status); // too slow, can't print this much
-// 	usb_audio_sync_feedback = feedback_accumulator >> usb_audio_sync_rshift;
-// 	usb_prepare_transfer(&sync_transfer, &usb_audio_sync_feedback, usb_audio_sync_nbytes, 0);
-// 	arm_dcache_flush(&usb_audio_sync_feedback, usb_audio_sync_nbytes);
-// 	usb_transmit(AUDIO_SYNC_ENDPOINT, &sync_transfer);
-// }
+static void sync_event(transfer_t *t)
+{
+	// USB 2.0 Specification, 5.12.4.2 Feedback, pages 73-75
+	//printf("sync %x\n", sync_transfer.status); // too slow, can't print this much
+	usb_audio_sync_feedback = feedback_accumulator >> usb_audio_sync_rshift;
+	usb_prepare_transfer(&sync_transfer, &usb_audio_sync_feedback, usb_audio_sync_nbytes, 0);
+	arm_dcache_flush(&usb_audio_sync_feedback, usb_audio_sync_nbytes);
+	usb_transmit(AUDIO_SYNC_ENDPOINT, &sync_transfer);
+}
 
 void usb_mic_configure(void)
 {
-	printf("usb_mic_configure\n");
-	// usb_audio_underrun_count = 0;
-	// usb_audio_overrun_count = 0;
-	feedback_accumulator = (uint32_t) (AUDIO_SAMPLE_RATE_EXACT / 1000.0f) * 0x1000000; // 44.1 * 2^24
-	// if (usb_high_speed) {
-	// 	usb_audio_sync_nbytes = 4;
-	// 	usb_audio_sync_rshift = 8;
-	// } else  {
-	// 	usb_audio_sync_nbytes = 3;
-	// 	usb_audio_sync_rshift = 10;
-	// }
+	printf("usb_audio_configure\n");
+	usb_audio_underrun_count = 0;
+	usb_audio_overrun_count = 0;
+	feedback_accumulator = (uint32_t) ((AUDIO_SAMPLE_RATE_EXACT / 1000.0f) * 0x1000000); // 44.1 * 2^24
+	if (usb_high_speed) {
+		usb_audio_sync_nbytes = 4;
+		usb_audio_sync_rshift = 8;
+	} else {
+		usb_audio_sync_nbytes = 3;
+		usb_audio_sync_rshift = 10;
+	}
 	// memset(&rx_transfer, 0, sizeof(rx_transfer));
 	// usb_config_rx_iso(AUDIO_RX_ENDPOINT, AUDIO_RX_SIZE, 1, rx_event);
 	// rx_event(NULL);
-	// memset(&sync_transfer, 0, sizeof(sync_transfer));
-	// usb_config_tx_iso(AUDIO_SYNC_ENDPOINT, usb_audio_sync_nbytes, 1, sync_event);
-	// sync_event(NULL);
+	memset(&sync_transfer, 0, sizeof(sync_transfer));
+	usb_config_tx_iso(AUDIO_SYNC_ENDPOINT, usb_audio_sync_nbytes, 1, sync_event);
+	sync_event(NULL);
 	memset(&tx_transfer, 0, sizeof(tx_transfer));
 	usb_config_tx_iso(AUDIO_TX_ENDPOINT, AUDIO_TX_SIZE, 1, tx_event);
 	tx_event(NULL);
@@ -257,11 +256,11 @@ void AudioInputUSBMic::update(void)
 	}
 	//serial_phex(c);
 	//serial_print(".");
-	// if (!left || !right) {
-	// 	usb_audio_underrun_count++;
-	// 	//printf("#"); // buffer underrun - PC sending too slow
-	// 	if (f) feedback_accumulator += 3500;
-	// }
+	if (!left || !right) {
+		usb_audio_underrun_count++;
+		//printf("#"); // buffer underrun - PC sending too slow
+		if (f) feedback_accumulator += 3500;
+	}
 	if (left) {
 		transmit(left, 0);
 		release(left);
@@ -271,6 +270,19 @@ void AudioInputUSBMic::update(void)
 		release(right);
 	}
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -315,6 +327,7 @@ static void copy_from_buffers(uint32_t *dst, int16_t *left, int16_t *right, unsi
 void AudioOutputUSBMic::update(void)
 {
 	audio_block_t *left, *right;
+
 	// TODO: we shouldn't be writing to these......
 	//left = receiveReadOnly(0); // input 0 = left channel
 	//right = receiveReadOnly(1); // input 1 = right channel
@@ -377,11 +390,12 @@ void AudioOutputUSBMic::update(void)
 // no data to transmit
 unsigned int usb_audio_transmit_callback(void)
 {
+
 	uint32_t avail, num, target, offset, len=0;
-	audio_block_t *left, *right;	
-	const int ctarget = ((int)(AUDIO_SAMPLE_RATE_EXACT)) / 1000;	
-        if ((int)(AUDIO_SAMPLE_RATE_EXACT) == 44100 || 
-	    (int)(AUDIO_SAMPLE_RATE_EXACT) == 88200 || 
+		audio_block_t *left, *right;
+	const int ctarget = ((int)(AUDIO_SAMPLE_RATE_EXACT)) / 1000;
+        if ((int)(AUDIO_SAMPLE_RATE_EXACT) == 44100 ||
+	    (int)(AUDIO_SAMPLE_RATE_EXACT) == 88200 ||
 	    (int)(AUDIO_SAMPLE_RATE_EXACT) == 176400) {
 		static uint32_t count = 0;
 		if (++count < 10) {
@@ -391,7 +405,7 @@ unsigned int usb_audio_transmit_callback(void)
 			count = 0;
 		}
 	} else target = ctarget;
-	
+
 	while (len < target) {
 		num = target - len;
 		left = AudioOutputUSBMic::left_1st;
