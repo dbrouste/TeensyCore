@@ -62,7 +62,7 @@ uint8_t usb_audio_transmit_setting=0;
 uint8_t usb_audio_sync_nbytes;
 uint8_t usb_audio_sync_rshift;
 
-uint32_t feedback_accumulator;
+uint32_t feedback_accumulator; //samplerate adujusted to get a continuous asynchonous data flow
 
 volatile uint32_t usb_audio_underrun_count;
 volatile uint32_t usb_audio_overrun_count;
@@ -95,7 +95,7 @@ void usb_mic_configure(void)
 	printf("usb_audio_configure\n");
 	usb_audio_underrun_count = 0;
 	usb_audio_overrun_count = 0;
-	feedback_accumulator = (uint32_t) ((AUDIO_SAMPLE_RATE_EXACT / 1000.0f) * 0x1000000); // 44.1 * 2^24
+	feedback_accumulator = (uint32_t) ((AUDIO_SAMPLE_RATE_EXACT / 1000.0f) * (1<<24)); // 44.1 * 2^24
 	if (usb_high_speed) {
 		usb_audio_sync_nbytes = 4;
 		usb_audio_sync_rshift = 8;
@@ -233,57 +233,43 @@ void AudioInputUSBMic::begin(void)
 // }
 // #endif
 
-void AudioInputUSBMic::update(void)
-{
-	audio_block_t *left, *right;
+// void AudioInputUSBMic::update(void)
+// {
+// 	audio_block_t *left, *right;
 
-	__disable_irq();
-	left = ready_left;
-	ready_left = NULL;
-	right = ready_right;
-	ready_right = NULL;
-	uint16_t c = incoming_count;
-	uint8_t f = receive_flag;
-	receive_flag = 0;
-	__enable_irq();
-	if (f) {
-		int diff = AUDIO_BLOCK_SAMPLES/2 - (int)c;
-		feedback_accumulator += diff * 1;
-		//uint32_t feedback = (feedback_accumulator >> 8) + diff * 100;
-		//usb_audio_sync_feedback = feedback;
+// 	__disable_irq();
+// 	left = ready_left;
+// 	ready_left = NULL;
+// 	right = ready_right;
+// 	ready_right = NULL;
+// 	uint16_t c = incoming_count;
+// 	uint8_t f = receive_flag;
+// 	receive_flag = 0;
+// 	__enable_irq();
+// 	if (f) {
+// 		int diff = AUDIO_BLOCK_SAMPLES/2 - (int)c;
+// 		feedback_accumulator += diff * 1;
+// 		//uint32_t feedback = (feedback_accumulator >> 8) + diff * 100;
+// 		//usb_audio_sync_feedback = feedback;
 
-		//printf(diff >= 0 ? "." : "^");
-	}
-	//serial_phex(c);
-	//serial_print(".");
-	if (!left || !right) {
-		usb_audio_underrun_count++;
-		//printf("#"); // buffer underrun - PC sending too slow
-		if (f) feedback_accumulator += 3500;
-	}
-	if (left) {
-		transmit(left, 0);
-		release(left);
-	}
-	if (right) {
-		transmit(right, 1);
-		release(right);
-	}
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+// 		//printf(diff >= 0 ? "." : "^");
+// 	}
+// 	//serial_phex(c);
+// 	//serial_print(".");
+// 	if (!left || !right) {
+// 		usb_audio_underrun_count++;
+// 		//printf("#"); // buffer underrun - PC sending too slow
+// 		if (f) feedback_accumulator += 3500; //check for another method https://forum.pjrc.com/threads/61142-USB-Audio-Frame-Sync-on-Teensy-4-0
+// 	}
+// 	if (left) {
+// 		transmit(left, 0);
+// 		release(left);
+// 	}
+// 	if (right) {
+// 		transmit(right, 1);
+// 		release(right);
+// 	}
+// }
 
 
 
@@ -295,7 +281,7 @@ audio_block_t * AudioOutputUSBMic::right_1st;
 audio_block_t * AudioOutputUSBMic::right_2nd;
 uint16_t AudioOutputUSBMic::offset_1st;
 
-/*DMAMEM*/ uint16_t usb_audio_transmit_buffer[AUDIO_TX_SIZE/AUDIO_T2USB_CHANNEL_NUMBER] __attribute__ ((used, aligned(32)));
+/*DMAMEM*/ uint16_t usb_audio_transmit_buffer[AUDIO_TX_SIZE/AUDIO_T2USB_BYTE_NUMBER] __attribute__ ((used, aligned(32))); //TODO why devided by 2
 
 
 static void tx_event(transfer_t *t)
@@ -315,70 +301,73 @@ void AudioOutputUSBMic::begin(void)
 	right_1st = NULL;
 }
 
-static void copy_from_buffers(uint32_t *dst, int16_t *left, int16_t *right, unsigned int len)
+static void copy_from_buffers(uint16_t *dst, int16_t *left, unsigned int len)
 {
 	// TODO: optimize...
 	while (len > 0) {
-		*dst++ = (*right++ << 16) | (*left++ & 0xFFFF);
+		*dst++ = *left++ & 0xFFFF;
 		len--;
 	}
 }
 
 void AudioOutputUSBMic::update(void)
 {
-	audio_block_t *left, *right;
+	audio_block_t *left;
+	// audio_block_t *left, *right;
 
 	// TODO: we shouldn't be writing to these......
 	//left = receiveReadOnly(0); // input 0 = left channel
 	//right = receiveReadOnly(1); // input 1 = right channel
 	left = receiveWritable(0); // input 0 = left channel
-	right = receiveWritable(1); // input 1 = right channel
+	// right = receiveWritable(1); // input 1 = right channel
+
 	if (usb_audio_transmit_setting == 0) {
 		if (left) release(left);
-		if (right) release(right);
+		// if (right) release(right);
 		if (left_1st) { release(left_1st); left_1st = NULL; }
 		if (left_2nd) { release(left_2nd); left_2nd = NULL; }
-		if (right_1st) { release(right_1st); right_1st = NULL; }
-		if (right_2nd) { release(right_2nd); right_2nd = NULL; }
+		// if (right_1st) { release(right_1st); right_1st = NULL; }
+		// if (right_2nd) { release(right_2nd); right_2nd = NULL; }
 		offset_1st = 0;
 		return;
 	}
+
 	if (left == NULL) {
 		left = allocate();
-		if (left == NULL) {
-			if (right) release(right);
-			return;
-		}
+		// if (left == NULL) {
+		// 	if (right) release(right);
+		// 	return;
+		// }
 		memset(left->data, 0, sizeof(left->data));
 	}
-	if (right == NULL) {
-		right = allocate();
-		if (right == NULL) {
-			release(left);
-			return;
-		}
-		memset(right->data, 0, sizeof(right->data));
-	}
+	// if (right == NULL) {
+	// 	right = allocate();
+	// 	if (right == NULL) {
+	// 		release(left);
+	// 		return;
+	// 	}
+	// 	memset(right->data, 0, sizeof(right->data));
+	// }
 	__disable_irq();
 	if (left_1st == NULL) {
 		left_1st = left;
-		right_1st = right;
+		// right_1st = right;
 		offset_1st = 0;
 	} else if (left_2nd == NULL) {
 		left_2nd = left;
-		right_2nd = right;
+		// right_2nd = right;
 	} else {
 		// buffer overrun - PC is consuming too slowly
 		audio_block_t *discard1 = left_1st;
 		left_1st = left_2nd;
 		left_2nd = left;
-		audio_block_t *discard2 = right_1st;
-		right_1st = right_2nd;
-		right_2nd = right;
+		// audio_block_t *discard2 = right_1st;
+		// right_1st = right_2nd;
+		// right_2nd = right;
 		offset_1st = 0; // TODO: discard part of this data?
 		//serial_print("*");
 		release(discard1);
-		release(discard2);
+		// release(discard2);
 	}
 	__enable_irq();
 }
@@ -392,7 +381,8 @@ unsigned int usb_audio_transmit_callback(void)
 {
 
 	uint32_t avail, num, target, offset, len=0;
-		audio_block_t *left, *right;
+		audio_block_t *left;
+		// audio_block_t *left, *right;
 	const int ctarget = ((int)(AUDIO_SAMPLE_RATE_EXACT)) / 1000;
         if ((int)(AUDIO_SAMPLE_RATE_EXACT) == 44100 ||
 	    (int)(AUDIO_SAMPLE_RATE_EXACT) == 88200 ||
@@ -411,33 +401,33 @@ unsigned int usb_audio_transmit_callback(void)
 		left = AudioOutputUSBMic::left_1st;
 		if (left == NULL) {
 			// buffer underrun - PC is consuming too quickly
-			memset(usb_audio_transmit_buffer + len, 0, num * 4);
+			memset(usb_audio_transmit_buffer + len, 0, num * AUDIO_T2USB_BYTE_NUMBER * AUDIO_T2USB_CHANNEL_NUMBER);
 			//serial_print("%");
 			break;
 		}
-		right = AudioOutputUSBMic::right_1st;
+		// right = AudioOutputUSBMic::right_1st;
 		offset = AudioOutputUSBMic::offset_1st;
 
 		avail = AUDIO_BLOCK_SAMPLES - offset;
 		if (num > avail) num = avail;
-
-		copy_from_buffers((uint32_t *)usb_audio_transmit_buffer + len,
-			left->data + offset, right->data + offset, num);
+// digitalWrite(13,HIGH);
+		copy_from_buffers((uint16_t *)usb_audio_transmit_buffer + len,left->data + offset, num);
+		// copy_from_buffers((uint32_t *)usb_audio_transmit_buffer + len,left->data + offset, right->data + offset, num);
 		len += num;
 		offset += num;
 		if (offset >= AUDIO_BLOCK_SAMPLES) {
 			AudioStream::release(left);
-			AudioStream::release(right);
+			// AudioStream::release(right);
 			AudioOutputUSBMic::left_1st = AudioOutputUSBMic::left_2nd;
 			AudioOutputUSBMic::left_2nd = NULL;
-			AudioOutputUSBMic::right_1st = AudioOutputUSBMic::right_2nd;
-			AudioOutputUSBMic::right_2nd = NULL;
+			// AudioOutputUSBMic::right_1st = AudioOutputUSBMic::right_2nd;
+			// AudioOutputUSBMic::right_2nd = NULL;
 			AudioOutputUSBMic::offset_1st = 0;
 		} else {
 			AudioOutputUSBMic::offset_1st = offset;
 		}
 	}
-	return target * 4;
+	return target * AUDIO_T2USB_BYTE_NUMBER * AUDIO_T2USB_CHANNEL_NUMBER;
 }
 #endif
 

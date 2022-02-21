@@ -63,6 +63,10 @@
 #define AUDIO_T2USB_CHANNEL_NUMBER 1
 #endif
 
+#ifndef AUDIO_T2USB_BYTE_NUMBER
+#define AUDIO_T2USB_BYTE_NUMBER 2 //16bits = 8x2
+#endif
+
 #define AUDIO_SAMPLE_RATE AUDIO_SAMPLE_RATE_EXACT
 
 #if defined(__cplusplus)
