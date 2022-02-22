@@ -277,8 +277,8 @@ void AudioInputUSBMic::begin(void)
 bool AudioOutputUSBMic::update_responsibility;
 audio_block_t * AudioOutputUSBMic::left_1st;
 audio_block_t * AudioOutputUSBMic::left_2nd;
-audio_block_t * AudioOutputUSBMic::right_1st;
-audio_block_t * AudioOutputUSBMic::right_2nd;
+// audio_block_t * AudioOutputUSBMic::right_1st;
+// audio_block_t * AudioOutputUSBMic::right_2nd;
 uint16_t AudioOutputUSBMic::offset_1st;
 
 /*DMAMEM*/ uint16_t usb_audio_transmit_buffer[AUDIO_TX_SIZE/AUDIO_T2USB_BYTE_NUMBER] __attribute__ ((used, aligned(32))); //TODO why devided by 2
@@ -298,15 +298,15 @@ void AudioOutputUSBMic::begin(void)
 {
 	update_responsibility = false;
 	left_1st = NULL;
-	right_1st = NULL;
+	// right_1st = NULL;
 }
 
-static void copy_from_buffers(uint16_t *dst, int16_t *left, unsigned int len)
+static void copy_from_buffers(uint32_t *dst, int16_t *left, unsigned int len)
 {
 	// TODO: optimize...
 	while (len > 0) {
-		*dst++ = *left++ & 0xFFFF;
-		len--;
+		*dst++ = (*left++ << 16) | (*left++ & 0xFFFF);
+		len--;len--;
 	}
 }
 
@@ -411,7 +411,7 @@ unsigned int usb_audio_transmit_callback(void)
 		avail = AUDIO_BLOCK_SAMPLES - offset;
 		if (num > avail) num = avail;
 // digitalWrite(13,HIGH);
-		copy_from_buffers((uint16_t *)usb_audio_transmit_buffer + len,left->data + offset, num);
+		copy_from_buffers((uint32_t *)usb_audio_transmit_buffer + len,left->data + offset, num);
 		// copy_from_buffers((uint32_t *)usb_audio_transmit_buffer + len,left->data + offset, right->data + offset, num);
 		len += num;
 		offset += num;
