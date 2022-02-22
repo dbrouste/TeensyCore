@@ -81,9 +81,9 @@ public:
 private:
 	static bool update_responsibility;
 	static audio_block_t *incoming_left;
-	static audio_block_t *incoming_right;
+	// static audio_block_t *incoming_right;
 	static audio_block_t *ready_left;
-	static audio_block_t *ready_right;
+	// static audio_block_t *ready_right;
 	static uint16_t incoming_count;
 	static uint8_t receive_flag;
 };
@@ -100,8 +100,8 @@ private:
 	static bool update_responsibility;
 	static audio_block_t *left_1st;
 	static audio_block_t *left_2nd;
-	static audio_block_t *right_1st;
-	static audio_block_t *right_2nd;
+	// static audio_block_t *right_1st;
+	// static audio_block_t *right_2nd;
 	static uint16_t offset_1st;
 	audio_block_t *inputQueueArray[2];
 };

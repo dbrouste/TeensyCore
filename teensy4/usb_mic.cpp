@@ -304,8 +304,12 @@ void AudioOutputUSBMic::begin(void)
 static void copy_from_buffers(uint32_t *dst, int16_t *left, unsigned int len)
 {
 	// TODO: optimize...
+	int16_t temp1 = 0;
+	int16_t temp2 = 0;
 	while (len > 0) {
-		*dst++ = (*left++ << 16) | (*left++ & 0xFFFF);
+		temp1 = *left++;
+		temp2 = *left++;
+		*dst++ = (temp1 << 16) | (temp2 & 0xFFFF);
 		len--;len--;
 	}
 }
