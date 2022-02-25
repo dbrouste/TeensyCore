@@ -121,8 +121,7 @@ let me know?  http://forum.pjrc.com/forums/4-Suggestions-amp-Bug-Reports
   #define NUM_ENDPOINTS         1 //ok
   //#define SAMPLE_RATE	           0x07A120 //500 000
   #define MAX_POWER	               0xF0 // (23mA unit)
-  #define CHANNEL_NUMBER           1  //mono
-  #define AUDIO_TX_SIZE         ((int)((AUDIO_SAMPLE_RATE_EXACT + 900) / 1000) * 2 * CHANNEL_NUMBER)//2 instead of 4 because mono  (sample_rate*byte_number)/1000
+  #define AUDIO_TX_SIZE         ((int)((AUDIO_SAMPLE_RATE_EXACT + 900) / 1000) * AUDIO_T2USB_BYTE_NUMBER * AUDIO_T2USB_CHANNEL_NUMBER)//2 instead of 4 because mono  (sample_rate*byte_number)/1000
   #define NUM_INTERFACE            2 //needed for function usb_config_descriptor_480 and usb_config_descriptor_12
   #define USB_MIC_INTERFACE        1 //needed for 'USB Descriptor Sizes' part
   #define TRANSFER_TYPE            0x80
@@ -164,7 +163,7 @@ let me know?  http://forum.pjrc.com/forums/4-Suggestions-amp-Bug-Reports
   #define SEREMU_RX_INTERVAL    2
   #define AUDIO_INTERFACE	1	// Audio (uses 3 consecutive interfaces)
   #define AUDIO_TX_ENDPOINT     3
-  #define AUDIO_TX_SIZE         ((int)((AUDIO_SAMPLE_RATE_EXACT + 900) / 1000) * 2 * AUDIO_T2USB_CHANNEL_NUMBER) //2 = 16bits
+  #define AUDIO_TX_SIZE         ((int)((AUDIO_SAMPLE_RATE_EXACT + 900) / 1000) * AUDIO_T2USB_BYTE_NUMBER * AUDIO_T2USB_CHANNEL_NUMBER) //2 = 16bits
   #define AUDIO_RX_ENDPOINT     3
   #define AUDIO_RX_SIZE         AUDIO_TX_SIZE
   #define AUDIO_SYNC_ENDPOINT	4

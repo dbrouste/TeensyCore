@@ -272,6 +272,12 @@ static void usb_setup(void)
 				table[index(i, TX, EVEN)].desc = (3<<16) | BDT_OWN;
 			}
 #endif
+#ifdef USB_MIC_INTERFACE
+			if (i == AUDIO_SYNC_ENDPOINT) {
+				table[index(i, TX, EVEN)].addr = &usb_mic_sync_feedback;
+				table[index(i, TX, EVEN)].desc = (3<<16) | BDT_OWN;
+			}
+#endif
 		}
 		break;
 	  case 0x0880: // GET_CONFIGURATION
@@ -447,6 +453,73 @@ static void usb_setup(void)
 			reply_buffer[0] = usb_audio_transmit_setting;
 		} else if (setup.wIndex == AUDIO_INTERFACE+2) {
 			reply_buffer[0] = usb_audio_receive_setting;
+		} else {
+			endpoint0_stall();
+			return;
+		}
+		break;
+	  case 0x0121: // SET FEATURE
+	  case 0x0221:
+	  case 0x0321:
+	  case 0x0421:
+	  	// handle these on the next packet. See usb_audio_set_feature()
+		return;
+	  case 0x81A1: // GET FEATURE
+	  case 0x82A1:
+	  case 0x83A1:
+	  case 0x84A1:
+	  	if (usb_audio_get_feature(&setup, reply_buffer, &datalen)) {
+	  		data = reply_buffer;
+	  	}
+	  	else {
+	  		endpoint0_stall();
+	  		return;
+	  	}
+		break;
+
+	  case 0x81A2: // GET_CUR (wValue=0, wIndex=interface, wLength=len)
+		if (setup.wLength >= 3) {
+			reply_buffer[0] = 44100 & 255;
+			reply_buffer[1] = 44100 >> 8;
+			reply_buffer[2] = 0;
+			datalen = 3;
+			data = reply_buffer;
+		} else {
+			endpoint0_stall();
+			return;
+		}
+		break;
+#endif
+
+#if defined(USB_MIC_INTERFACE)
+	  case 0x0B01: // SET_INTERFACE (alternate setting)
+		if (setup.wIndex == AUDIO_INTERFACE-1) {
+			usb_mic_transmit_setting = setup.wValue;
+			if (usb_mic_transmit_setting > 0) {
+				bdt_t *b = &table[index(AUDIO_TX_ENDPOINT, TX, EVEN)];
+				uint8_t state = tx_state[AUDIO_TX_ENDPOINT-1];
+				if (state) b++;
+				if (!(b->desc & BDT_OWN)) {
+					memset(usb_mic_transmit_buffer, 0, 176);
+					b->addr = usb_mic_transmit_buffer;
+					b->desc = (176 << 16) | BDT_OWN;
+					tx_state[AUDIO_TX_ENDPOINT-1] = state ^ 1;
+				}
+			}
+		} else if (setup.wIndex == AUDIO_INTERFACE) {
+			usb_mic_receive_setting = setup.wValue;
+		} else {
+			endpoint0_stall();
+			return;
+		}
+		break;
+	  case 0x0A81: // GET_INTERFACE (alternate setting)
+		datalen = 1;
+		data = reply_buffer;
+		if (setup.wIndex == AUDIO_INTERFACE-1) {
+			reply_buffer[0] = usb_mic_transmit_setting;
+		} else if (setup.wIndex == AUDIO_INTERFACE) {
+			reply_buffer[0] = usb_mic_receive_setting;
 		} else {
 			endpoint0_stall();
 			return;
@@ -667,6 +740,11 @@ static void usb_control(uint32_t stat)
 #endif
 #ifdef AUDIO_INTERFACE
 		if (usb_audio_set_feature(&setup, buf)) {
+			endpoint0_transmit(NULL, 0);
+		}
+#endif
+#ifdef AUDIO_INTERFACE
+		if (usb_mic_set_feature(&setup, buf)) {
 			endpoint0_transmit(NULL, 0);
 		}
 #endif
@@ -1008,6 +1086,23 @@ void usb_isr(void)
 			} else if ((endpoint == AUDIO_SYNC_ENDPOINT-1) && (stat & 0x08)) {
 				b = (bdt_t *)((uint32_t)b ^ 8);
 				b->addr = &usb_audio_sync_feedback;
+				b->desc = (3 << 16) | BDT_OWN;
+				tx_state[endpoint] ^= 1;
+			} else
+#endif
+#ifdef USB_MIC_INTERFACE
+			if ((endpoint == AUDIO_TX_ENDPOINT-1) && (stat & 0x08)) {
+				unsigned int len;
+				len = usb_mic_transmit_callback();
+				if (len > 0) {
+					b = (bdt_t *)((uint32_t)b ^ 8);
+					b->addr = usb_mic_transmit_buffer;
+					b->desc = (len << 16) | BDT_OWN;
+					tx_state[endpoint] ^= 1;
+				}
+			} else if ((endpoint == AUDIO_SYNC_ENDPOINT-1) && (stat & 0x08)) {
+				b = (bdt_t *)((uint32_t)b ^ 8);
+				b->addr = &usb_mic_sync_feedback;
 				b->desc = (3 << 16) | BDT_OWN;
 				tx_state[endpoint] ^= 1;
 			} else

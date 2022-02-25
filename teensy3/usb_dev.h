@@ -102,6 +102,18 @@ extern int usb_audio_get_feature(void *stp, uint8_t *data, uint32_t *datalen);
 extern int usb_audio_set_feature(void *stp, uint8_t *buf);
 #endif
 
+#ifdef USB_MIC_INTERFACE
+extern uint16_t usb_mic_receive_buffer[];
+extern uint16_t usb_mic_transmit_buffer[];
+extern uint32_t usb_mic_sync_feedback;
+extern uint8_t usb_mic_receive_setting;
+extern uint8_t usb_mic_transmit_setting;
+extern void usb_mic_receive_callback(unsigned int len);
+extern unsigned int usb_mic_transmit_callback(void);
+extern int usb_mic_get_feature(void *stp, uint8_t *data, uint32_t *datalen);
+extern int usb_mic_set_feature(void *stp, uint8_t *buf);
+#endif
+
 #ifdef MULTITOUCH_INTERFACE
 extern void usb_touchscreen_update_callback(void);
 #endif

@@ -295,7 +295,7 @@ audio_block_t * AudioOutputUSB::right_1st;
 audio_block_t * AudioOutputUSB::right_2nd;
 uint16_t AudioOutputUSB::offset_1st;
 
-/*DMAMEM*/ uint16_t usb_audio_transmit_buffer[AUDIO_TX_SIZE/AUDIO_T2USB_CHANNEL_NUMBER] __attribute__ ((used, aligned(32)));
+/*DMAMEM*/ uint16_t usb_audio_transmit_buffer[AUDIO_TX_SIZE/2] __attribute__ ((used, aligned(32)));
 
 
 static void tx_event(transfer_t *t)
@@ -318,9 +318,24 @@ void AudioOutputUSB::begin(void)
 static void copy_from_buffers(uint32_t *dst, int16_t *left, int16_t *right, unsigned int len)
 {
 	// TODO: optimize...
-	while (len > 0) {
-		*dst++ = (*right++ << 16) | (*left++ & 0xFFFF);
-		len--;
+	if (AUDIO_T2USB_CHANNEL_NUMBER == 2)
+	{
+		while (len > 0) {
+			*dst++ = (*right++ << 16) | (*left++ & 0xFFFF);
+			len--;
+		}
+	}
+	else
+	{
+		int16_t temp1 = 0;
+		int16_t temp2 = 0;
+		
+		while (len > 0) {
+			temp1 = *left++;
+			temp2 = *left++;
+			*dst++ = (temp1 << 16) | (temp2 & 0xFFFF);
+			len--;len--;
+		}
 	}
 }
 
@@ -395,10 +410,10 @@ unsigned int usb_audio_transmit_callback(void)
 		audio_block_t *left, *right;
 	const int ctarget = ((int)(AUDIO_SAMPLE_RATE_EXACT)) / 1000;
         if ((int)(AUDIO_SAMPLE_RATE_EXACT) == 44100 ||
-	    (int)(AUDIO_SAMPLE_RATE_EXACT) == 88200 ||
+	    (int)(AUDIO_SAMPLE_RATE_EXACT) == 88200 || //TODO : don't think this is working for 88.2 or 176.4
 	    (int)(AUDIO_SAMPLE_RATE_EXACT) == 176400) {
 		static uint32_t count = 0;
-		if (++count < 10) {
+		if (++count < 10) { //allow to get the 0.1kHz
 			target = ctarget;
 		} else {
 			target = ctarget + 1;
@@ -411,8 +426,9 @@ unsigned int usb_audio_transmit_callback(void)
 		left = AudioOutputUSB::left_1st;
 		if (left == NULL) {
 			// buffer underrun - PC is consuming too quickly
-			memset(usb_audio_transmit_buffer + len, 0, num * 4);
-			//serial_print("%");
+			memset(usb_audio_transmit_buffer + (len*AUDIO_T2USB_CHANNEL_NUMBER/2), 0, num * AUDIO_T2USB_BYTE_NUMBER *AUDIO_T2USB_CHANNEL_NUMBER);
+			serial_print("%");
+			
 			break;
 		}
 		right = AudioOutputUSB::right_1st;
@@ -421,8 +437,7 @@ unsigned int usb_audio_transmit_callback(void)
 		avail = AUDIO_BLOCK_SAMPLES - offset;
 		if (num > avail) num = avail;
 
-		copy_from_buffers((uint32_t *)usb_audio_transmit_buffer + len,
-			left->data + offset, right->data + offset, num);
+		copy_from_buffers((uint32_t *)usb_audio_transmit_buffer + (len*AUDIO_T2USB_CHANNEL_NUMBER/2),	left->data + offset, right->data + offset, num);
 		len += num;
 		offset += num;
 		if (offset >= AUDIO_BLOCK_SAMPLES) {
@@ -437,7 +452,7 @@ unsigned int usb_audio_transmit_callback(void)
 			AudioOutputUSB::offset_1st = offset;
 		}
 	}
-	return target * 4;
+	return target * AUDIO_T2USB_BYTE_NUMBER * AUDIO_T2USB_CHANNEL_NUMBER;
 }
 #endif
 
