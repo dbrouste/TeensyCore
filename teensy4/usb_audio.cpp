@@ -342,13 +342,14 @@ static void copy_from_buffers(uint32_t *dst, int16_t *left, int16_t *right, unsi
 void AudioOutputUSB::update(void)
 {
 	audio_block_t *left, *right;
-
+	serial_print("1");
 	// TODO: we shouldn't be writing to these......
 	//left = receiveReadOnly(0); // input 0 = left channel
 	//right = receiveReadOnly(1); // input 1 = right channel
 	left = receiveWritable(0); // input 0 = left channel
 	right = receiveWritable(1); // input 1 = right channel
 	if (usb_audio_transmit_setting == 0) {
+		// serial_print("3");
 		if (left) release(left);
 		if (right) release(right);
 		if (left_1st) { release(left_1st); left_1st = NULL; }
@@ -405,17 +406,25 @@ void AudioOutputUSB::update(void)
 // no data to transmit
 unsigned int usb_audio_transmit_callback(void)
 {
+	serial_print("2");
 
 	uint32_t avail, num, target, offset, len=0;
-		audio_block_t *left, *right;
+	audio_block_t *left, *right;
+
 	const int ctarget = ((int)(AUDIO_SAMPLE_RATE_EXACT)) / 1000;
-        if ((int)(AUDIO_SAMPLE_RATE_EXACT) == 44100 ||
+
+    if ((int)(AUDIO_SAMPLE_RATE_EXACT) == 44100 ||
 	    (int)(AUDIO_SAMPLE_RATE_EXACT) == 88200 || //TODO : don't think this is working for 88.2 or 176.4
-	    (int)(AUDIO_SAMPLE_RATE_EXACT) == 176400) {
+	    (int)(AUDIO_SAMPLE_RATE_EXACT) == 176400) 
+	{
 		static uint32_t count = 0;
-		if (++count < 10) { //allow to get the 0.1kHz
+
+		if (++count < 10) //allow to get the 0.1kHz (in 44.1)
+		{ 
 			target = ctarget;
-		} else {
+		} 
+		else 
+		{
 			target = ctarget + 1;
 			count = 0;
 		}
@@ -429,7 +438,7 @@ unsigned int usb_audio_transmit_callback(void)
 			memset(usb_audio_transmit_buffer + (len*AUDIO_T2USB_CHANNEL_NUMBER/2), 0, num * AUDIO_T2USB_BYTE_NUMBER *AUDIO_T2USB_CHANNEL_NUMBER);
 			serial_print("%");
 			
-			break;
+			break; //TODO : It enter this break every time
 		}
 		right = AudioOutputUSB::right_1st;
 		offset = AudioOutputUSB::offset_1st;

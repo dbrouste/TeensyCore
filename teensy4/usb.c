@@ -21,6 +21,7 @@
 #include <string.h>
 #include "debug/printf.h"
 #include "AudioStream.h"
+#include <Arduino.h>
 
 //#define LOG_SIZE  20
 //uint32_t transfer_log_head=0;
@@ -680,7 +681,7 @@ static void endpoint0_setup(uint64_t setupdata)
 
 #if defined(USB_MIC_INTERFACE)
 	  case 0x0B01: // SET_INTERFACE (alternate setting)
-		if (setup.wIndex == USB_MIC_INTERFACE-1) {
+		if (setup.wIndex == USB_MIC_INTERFACE) {
 			usb_mic_transmit_setting = setup.wValue;
 			if (usb_mic_transmit_setting > 0) {
 			// digitalWrite(13,HIGH);
@@ -688,18 +689,18 @@ static void endpoint0_setup(uint64_t setupdata)
 			}
 			endpoint0_receive(NULL, 0, 0);
 			return;
-		} else if (setup.wIndex == USB_MIC_INTERFACE) {
+		} else if (setup.wIndex == USB_MIC_INTERFACE+1) {
 			usb_mic_receive_setting = setup.wValue;
 			endpoint0_receive(NULL, 0, 0);
 			return;
 		}
 		break;
 	  case 0x0A81: // GET_INTERFACE (alternate setting)
-		if (setup.wIndex == USB_MIC_INTERFACE-1) {
+		if (setup.wIndex == USB_MIC_INTERFACE) {
 			endpoint0_buffer[0] = usb_mic_transmit_setting;
 			endpoint0_transmit(endpoint0_buffer, 1, 0);
 			return;
-		} else if (setup.wIndex == USB_MIC_INTERFACE) {
+		} else if (setup.wIndex == USB_MIC_INTERFACE+1) {
 			endpoint0_buffer[0] = usb_mic_receive_setting;
 			endpoint0_transmit(endpoint0_buffer, 1, 0);
 			return;
