@@ -36,13 +36,13 @@
 
 #ifdef USB_MIC_INTERFACE
 
-bool AudioInputUSBMic::update_responsibility;
+// bool AudioInputUSBMic::update_responsibility;
 // audio_block_t * AudioInputUSBMic::incoming_left;
 // audio_block_t * AudioInputUSBMic::incoming_right;
 // audio_block_t * AudioInputUSBMic::ready_left;
 // audio_block_t * AudioInputUSBMic::ready_right;
 // uint16_t AudioInputUSBMic::incoming_count;
-uint8_t AudioInputUSBMic::receive_flag;
+// uint8_t AudioInputUSBMic::receive_flag;
 
 struct usb_mic_features_struct AudioInputUSBMic::features = {0,0,FEATURE_MAX_VOLUME/2};
 
@@ -50,22 +50,22 @@ extern volatile uint8_t usb_high_speed;
 // static void rx_event(transfer_t *t);
 static void txmic_event(transfer_t *t);
 
-/*static*/ transfer_t rx_transfer __attribute__ ((used, aligned(32)));
-/*static*/ transfer_t sync_transfer __attribute__ ((used, aligned(32)));
+// /*static*/ transfer_t rx_transfer __attribute__ ((used, aligned(32)));
+// /*static*/ transfer_t sync_transfer __attribute__ ((used, aligned(32)));
 /*static*/ transfer_t tx_transfer __attribute__ ((used, aligned(32)));
 // DMAMEM static uint8_t rx_buffer[AUDIO_RX_SIZE] __attribute__ ((aligned(32)));
 DMAMEM static uint8_t tx_buffer[AUDIO_TX_SIZE] __attribute__ ((aligned(32)));
-DMAMEM uint32_t usb_mic_sync_feedback __attribute__ ((aligned(32)));
+// DMAMEM uint32_t usb_mic_sync_feedback __attribute__ ((aligned(32)));
 
 uint8_t usb_mic_receive_setting=0;
 uint8_t usb_mic_transmit_setting=0;
-uint8_t usb_mic_sync_nbytes;
-uint8_t usb_mic_sync_rshift;
+// uint8_t usb_mic_sync_nbytes;
+// uint8_t usb_mic_sync_rshift;
 
-uint32_t feedback_accumulator; //samplerate adujusted to get a continuous asynchonous data flow
+// uint32_t feedback_accumulator; //samplerate adujusted to get a continuous asynchonous data flow
 
-volatile uint32_t usb_mic_underrun_count;
-volatile uint32_t usb_mic_overrun_count;
+// volatile uint32_t usb_mic_underrun_count;
+// volatile uint32_t usb_mic_overrun_count;
 
 
 // static void rx_event(transfer_t *t)
@@ -80,55 +80,55 @@ volatile uint32_t usb_mic_overrun_count;
 // 	usb_receive(AUDIO_RX_ENDPOINT, &rx_transfer);
 // }
 
-static void sync_event(transfer_t *t)
-{
-	// USB 2.0 Specification, 5.12.4.2 Feedback, pages 73-75
-	//printf("sync %x\n", sync_transfer.status); // too slow, can't print this much
-	usb_mic_sync_feedback = feedback_accumulator >> usb_mic_sync_rshift;
-	usb_prepare_transfer(&sync_transfer, &usb_mic_sync_feedback, usb_mic_sync_nbytes, 0);
-	arm_dcache_flush(&usb_mic_sync_feedback, usb_mic_sync_nbytes);
-	usb_transmit(AUDIO_SYNC_ENDPOINT, &sync_transfer);
-}
+// static void sync_event(transfer_t *t)
+// {
+// 	// USB 2.0 Specification, 5.12.4.2 Feedback, pages 73-75
+// 	//printf("sync %x\n", sync_transfer.status); // too slow, can't print this much
+// 	// usb_mic_sync_feedback = feedback_accumulator >> usb_mic_sync_rshift;
+// 	// usb_prepare_transfer(&sync_transfer, &usb_mic_sync_feedback, usb_mic_sync_nbytes, 0);
+// 	// arm_dcache_flush(&usb_mic_sync_feedback, usb_mic_sync_nbytes);
+// 	// usb_transmit(AUDIO_SYNC_ENDPOINT, &sync_transfer);
+// }
 
 void usb_mic_configure(void)
 {
-	printf("usb_mic_configure\n");
-	usb_mic_underrun_count = 0;
-	usb_mic_overrun_count = 0;
-	feedback_accumulator = (uint32_t) ((AUDIO_SAMPLE_RATE_EXACT / 1000.0f) * (1<<24)); // 44.1 * 2^24
-	if (usb_high_speed) {
-		usb_mic_sync_nbytes = 4;
-		usb_mic_sync_rshift = 8;
-	} else {
-		usb_mic_sync_nbytes = 3;
-		usb_mic_sync_rshift = 10;
-	}
+	// printf("usb_mic_configure\n");
+	// usb_mic_underrun_count = 0;
+	// usb_mic_overrun_count = 0;
+	// feedback_accumulator = (uint32_t) ((AUDIO_SAMPLE_RATE_EXACT / 1000.0f) * (1<<24)); // 44.1 * 2^24
+	// if (usb_high_speed) {
+	// 	// usb_mic_sync_nbytes = 4; //USB's asynchronous rate feedback is 3 bytes at full speed and 4 bytes at high speed. https://forum.pjrc.com/threads/60557-48kHz-8i80-USB-Audio
+	// 	usb_mic_sync_rshift = 8;
+	// } else {
+	// 	// usb_mic_sync_nbytes = 3;
+	// 	usb_mic_sync_rshift = 10;
+	// }
 	// memset(&rx_transfer, 0, sizeof(rx_transfer));
 	// usb_config_rx_iso(AUDIO_RX_ENDPOINT, AUDIO_RX_SIZE, 1, rx_event);
 	// rx_event(NULL);
-	memset(&sync_transfer, 0, sizeof(sync_transfer));
-	usb_config_tx_iso(AUDIO_SYNC_ENDPOINT, usb_mic_sync_nbytes, 1, sync_event);
-	sync_event(NULL);
+	// memset(&sync_transfer, 0, sizeof(sync_transfer));
+	// usb_config_tx_iso(AUDIO_SYNC_ENDPOINT, usb_mic_sync_nbytes, 1, sync_event);
+	// sync_event(NULL);
 	memset(&tx_transfer, 0, sizeof(tx_transfer));
-	usb_config_tx_iso(AUDIO_TX_ENDPOINT, AUDIO_TX_SIZE, 1, txmic_event);
+	usb_config_mic_iso(AUDIO_TX_ENDPOINT, AUDIO_TX_SIZE, 1, txmic_event);
 	txmic_event(NULL);
 }
 
-void AudioInputUSBMic::begin(void)
-{
-	// incoming_count = 0;
-	// incoming_left = NULL;
-	// incoming_right = NULL;
-	// ready_left = NULL;
-	// ready_right = NULL;
-	receive_flag = 0;
-	// update_responsibility = update_setup();
-	// TODO: update responsibility is tough, partly because the USB
-	// interrupts aren't sychronous to the audio library block size,
-	// but also because the PC may stop transmitting data, which
-	// means we no longer get receive callbacks from usb.c
-	update_responsibility = false;
-}
+// void AudioInputUSBMic::begin(void)
+// {
+// 	incoming_count = 0;
+// 	incoming_left = NULL;
+// 	incoming_right = NULL;
+// 	ready_left = NULL;
+// 	ready_right = NULL;
+// 	receive_flag = 0;
+// 	update_responsibility = update_setup();
+// 	TODO: update responsibility is tough, partly because the USB
+// 	interrupts aren't sychronous to the audio library block size,
+// 	but also because the PC may stop transmitting data, which
+// 	means we no longer get receive callbacks from usb.c
+// 	update_responsibility = false;
+// }
 
 // static void copy_to_buffers(const uint32_t *src, int16_t *left, int16_t *right, unsigned int len)
 // {
@@ -287,10 +287,11 @@ uint16_t AudioOutputUSBMic::offset_1st;
 static void txmic_event(transfer_t *t)
 {
 	int len = usb_mic_transmit_callback();
-	usb_mic_sync_feedback = feedback_accumulator >> usb_mic_sync_rshift;
+	// usb_mic_sync_feedback = feedback_accumulator >> usb_mic_sync_rshift;
 	usb_prepare_transfer(&tx_transfer, usb_mic_transmit_buffer, len, 0);
 	arm_dcache_flush_delete(usb_mic_transmit_buffer, len);
-	usb_transmit(AUDIO_TX_ENDPOINT, &tx_transfer);
+	usb_transmit_mic(AUDIO_TX_ENDPOINT, &tx_transfer);
+	serial_print("7");
 }
 
 
@@ -346,6 +347,7 @@ void AudioOutputUSBMic::update(void)
 		// 	return;
 		// }
 		memset(left->data, 0, sizeof(left->data));
+		serial_print("4");
 	}
 	// if (right == NULL) {
 	// 	right = allocate();
@@ -358,6 +360,7 @@ void AudioOutputUSBMic::update(void)
 	__disable_irq();
 	if (left_1st == NULL) {
 		left_1st = left;
+		serial_print("5");
 		// right_1st = right;
 		offset_1st = 0;
 	} else if (left_2nd == NULL) {

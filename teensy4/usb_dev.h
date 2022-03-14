@@ -26,9 +26,11 @@ void usb_config_rx(uint32_t ep, uint32_t packet_size, int do_zlp, void (*cb)(tra
 void usb_config_tx(uint32_t ep, uint32_t packet_size, int do_zlp, void (*cb)(transfer_t *));
 void usb_config_rx_iso(uint32_t ep, uint32_t packet_size, int mult, void (*cb)(transfer_t *));
 void usb_config_tx_iso(uint32_t ep, uint32_t packet_size, int mult, void (*cb)(transfer_t *));
+void usb_config_mic_iso(uint32_t ep, uint32_t packet_size, int mult, void (*cb)(transfer_t *));
 
 void usb_prepare_transfer(transfer_t *transfer, const void *data, uint32_t len, uint32_t param);
 void usb_transmit(int endpoint_number, transfer_t *transfer);
+void usb_transmit_mic(int endpoint_number, transfer_t *transfer);
 void usb_receive(int endpoint_number, transfer_t *transfer);
 uint32_t usb_transfer_status(const transfer_t *transfer);
 

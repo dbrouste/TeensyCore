@@ -1725,7 +1725,7 @@ LSB(AUDIO_SAMPLE_RATE_EXACT), MSB(AUDIO_SAMPLE_RATE_EXACT), HSB(AUDIO_SAMPLE_RAT
 //Table B-11: USB Microphone Standard Endpoint Descriptor
 9,        // bLength = Size of this descriptor, in bytes.
 0x05,        // bDescriptorType = ENDPOINT descriptor.
-0x81,        // bEndpointAddress = IN Endpoint 1.
+AUDIO_TX_ENDPOINT | 0x80,        // bEndpointAddress = IN Endpoint 1.
 0x0D,        // bmAttributes = Isochronous, not shared.
 LSB(AUDIO_TX_SIZE),MSB(AUDIO_TX_SIZE),        // wMaxPacketSize = 16 bytes per packet.
 0x04,        // bInterval, 4 = every 8 micro-frames
@@ -2874,7 +2874,7 @@ LSB(AUDIO_SAMPLE_RATE_EXACT), MSB(AUDIO_SAMPLE_RATE_EXACT), HSB(AUDIO_SAMPLE_RAT
 //Table B-11: USB Microphone Standard Endpoint Descriptor
 9,        // bLength = Size of this descriptor, in bytes.
 0x05,        // bDescriptorType = ENDPOINT descriptor.
-0x81,        // bEndpointAddress = IN Endpoint 1.
+AUDIO_TX_ENDPOINT | 0x80,        // bEndpointAddress = IN Endpoint 1.
 0x0D,        // bmAttributes = Isochronous, not shared.
 LSB(AUDIO_TX_SIZE),MSB(AUDIO_TX_SIZE),        // wMaxPacketSize = 16 bytes per packet.
 0x01,        // bInterval = One packet per frame.
