@@ -1726,7 +1726,7 @@ LSB(AUDIO_SAMPLE_RATE_EXACT), MSB(AUDIO_SAMPLE_RATE_EXACT), HSB(AUDIO_SAMPLE_RAT
 9,        // bLength = Size of this descriptor, in bytes.
 0x05,        // bDescriptorType = ENDPOINT descriptor.
 AUDIO_TX_ENDPOINT | 0x80,        // bEndpointAddress = IN Endpoint 1.
-0x0D,        // bmAttributes = Isochronous, not shared.
+0x09,        // bmAttributes = Isochronous, not shared. //TODO check or 0D
 LSB(AUDIO_TX_SIZE),MSB(AUDIO_TX_SIZE),        // wMaxPacketSize = 16 bytes per packet.
 0x04,        // bInterval, 4 = every 8 micro-frames
 0x00,        // bRefresh = Unused.
@@ -2875,7 +2875,7 @@ LSB(AUDIO_SAMPLE_RATE_EXACT), MSB(AUDIO_SAMPLE_RATE_EXACT), HSB(AUDIO_SAMPLE_RAT
 9,        // bLength = Size of this descriptor, in bytes.
 0x05,        // bDescriptorType = ENDPOINT descriptor.
 AUDIO_TX_ENDPOINT | 0x80,        // bEndpointAddress = IN Endpoint 1.
-0x0D,        // bmAttributes = Isochronous, not shared.
+0x09,        // bmAttributes = Isochronous, not shared.
 LSB(AUDIO_TX_SIZE),MSB(AUDIO_TX_SIZE),        // wMaxPacketSize = 16 bytes per packet.
 0x01,        // bInterval = One packet per frame.
 0x00,        // bRefresh = Unused.

@@ -398,6 +398,7 @@ void AudioOutputUSB::update(void)
 		release(discard1);
 		release(discard2);
 	}
+	// serial_print("1");
 	__enable_irq();
 }
 
@@ -408,7 +409,7 @@ void AudioOutputUSB::update(void)
 // no data to transmit
 unsigned int usb_audio_transmit_callback(void)
 {
-	//serial_print("2");
+	// serial_print("2");
 
 	uint32_t avail, num, target, offset, len=0;
 	audio_block_t *left, *right;

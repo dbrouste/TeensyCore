@@ -112,8 +112,8 @@ let me know?  http://forum.pjrc.com/forums/4-Suggestions-amp-Bug-Reports
 
 #if  defined(USB_MIC)
   #define VENDOR_ID		           0x16C0
-  #define PRODUCT_ID		       0x04D8
-  #define BCD_DEVICE		       0x0215
+  #define PRODUCT_ID		       0x04D7
+  #define BCD_DEVICE		       0x0214
   #define MANUFACTURER_NAME	       {'T','e','e','n','s','y','d','u','i','n','o'}
   #define MANUFACTURER_NAME_LEN	   11
   #define PRODUCT_NAME		       {'T','e','e','n','s','y','D','M','i','c','r','o'}
@@ -134,11 +134,12 @@ let me know?  http://forum.pjrc.com/forums/4-Suggestions-amp-Bug-Reports
   #define SEREMU_RX_INTERVAL    2
   #define EP0_SIZE		64
   // #define AUDIO_SYNC_ENDPOINT	0
-  #define AUDIO_TX_ENDPOINT     1
+  #define AUDIO_TX_ENDPOINT     1 //ID of the TX endpoint
   // #define AUDIO_RX_ENDPOINT     0
   // #define AUDIO_RX_SIZE         AUDIO_TX_SIZE
   // #define ENDPOINT1_CONFIG	ENDPOINT_TRANSMIT_ISOCHRONOUS //found on teensy3 first audio dev
   // #define ENDPOINT4_CONFIG	ENDPOINT_RECEIVE_UNUSED + ENDPOINT_TRANSMIT_ISOCHRONOUS
+  #define ENDPOINT1_CONFIG ENDPOINT_TRANSMIT_ISOCHRONOUS
 
 
 

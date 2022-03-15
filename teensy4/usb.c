@@ -239,7 +239,8 @@ FLASHMEM void _reboot_Teensyduino_(void)
 
 void usb_isr(void)
 {
-	//printf("*");
+	// printf("*");
+	serial_print("*");
 
 	//  Port control in device mode is only used for
 	//  status port reset, suspend, and current connect status.
@@ -301,7 +302,8 @@ void usb_isr(void)
 #else
 			if (completestatus) {
 				int i;   // TODO: optimize with __builtin_ctz()
-				for (i=2; i <= NUM_ENDPOINTS; i++) {
+				// for (i=2; i <= NUM_ENDPOINTS; i++) {
+				for (i=1; i <= NUM_ENDPOINTS; i++) {
 					if (completestatus & (1 << i)) { // receive
 						run_callbacks(endpoint_queue_head + i * 2);
 					}
@@ -689,19 +691,11 @@ static void endpoint0_setup(uint64_t setupdata)
 			}
 			endpoint0_receive(NULL, 0, 0);
 			return;
-		} else if (setup.wIndex == USB_MIC_INTERFACE+1) {
-			usb_mic_receive_setting = setup.wValue;
-			endpoint0_receive(NULL, 0, 0);
-			return;
 		}
 		break;
 	  case 0x0A81: // GET_INTERFACE (alternate setting)
 		if (setup.wIndex == USB_MIC_INTERFACE) {
 			endpoint0_buffer[0] = usb_mic_transmit_setting;
-			endpoint0_transmit(endpoint0_buffer, 1, 0);
-			return;
-		} else if (setup.wIndex == USB_MIC_INTERFACE+1) {
-			endpoint0_buffer[0] = usb_mic_receive_setting;
 			endpoint0_transmit(endpoint0_buffer, 1, 0);
 			return;
 		}

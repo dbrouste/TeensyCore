@@ -318,7 +318,7 @@ static void copy_from_buffers(uint32_t *dst, int16_t *left, unsigned int len)
 
 void AudioOutputUSBMic::update(void)
 {
-	// serial_print("1");
+
 	audio_block_t *left;
 	// audio_block_t *left, *right;
 
@@ -347,7 +347,7 @@ void AudioOutputUSBMic::update(void)
 		// 	return;
 		// }
 		memset(left->data, 0, sizeof(left->data));
-		serial_print("4");
+		// serial_print("4");
 	}
 	// if (right == NULL) {
 	// 	right = allocate();
@@ -380,6 +380,7 @@ void AudioOutputUSBMic::update(void)
 		release(discard1);
 		// release(discard2);
 	}
+	// serial_print("1");
 	__enable_irq();
 }
 
@@ -390,7 +391,7 @@ void AudioOutputUSBMic::update(void)
 // no data to transmit
 unsigned int usb_mic_transmit_callback(void)
 {
-serial_print("2");
+// serial_print("2");
 	uint32_t avail, num, target, offset, len=0;
 		audio_block_t *left;
 		// audio_block_t *left, *right;
