@@ -292,8 +292,8 @@ void usb_audio_configure(void)
 bool AudioOutputUSB::update_responsibility;
 audio_block_t * AudioOutputUSB::left_1st;
 audio_block_t * AudioOutputUSB::left_2nd;
-audio_block_t * AudioOutputUSB::right_1st;
-audio_block_t * AudioOutputUSB::right_2nd;
+// audio_block_t * AudioOutputUSB::right_1st;
+// audio_block_t * AudioOutputUSB::right_2nd;
 uint16_t AudioOutputUSB::offset_1st;
 
 /*DMAMEM*/ uint16_t usb_audio_transmit_buffer[AUDIO_TX_SIZE/2] __attribute__ ((used, aligned(32)));
@@ -314,7 +314,7 @@ void AudioOutputUSB::begin(void)
 {
 	update_responsibility = false;
 	left_1st = NULL;
-	right_1st = NULL;
+	// right_1st = NULL;
 
 }
 
@@ -324,7 +324,8 @@ static void copy_from_buffers(uint32_t *dst, int16_t *left, int16_t *right, unsi
 	if (AUDIO_T2USB_CHANNEL_NUMBER == 2)
 	{
 		while (len > 0) {
-			*dst++ = (*right++ << 16) | (*left++ & 0xFFFF);
+			// *dst++ = (*right++ << 16) | (*left++ & 0xFFFF);
+			*dst++ = (*left++ & 0xFFFF);
 			len--;
 		}
 	}
@@ -339,60 +340,60 @@ static void copy_from_buffers(uint32_t *dst, int16_t *left, int16_t *right, unsi
 
 void AudioOutputUSB::update(void)
 {
-	audio_block_t *left, *right;
+	audio_block_t *left;
 	//serial_print("1");
 	// TODO: we shouldn't be writing to these......
 	//left = receiveReadOnly(0); // input 0 = left channel
 	//right = receiveReadOnly(1); // input 1 = right channel
 	left = receiveWritable(0); // input 0 = left channel
-	right = receiveWritable(1); // input 1 = right channel
+	// right = receiveWritable(1); // input 1 = right channel
 	if (usb_audio_transmit_setting == 0) {
 		// serial_print("3");
 		if (left) release(left);
-		if (right) release(right);
+		// if (right) release(right);
 		if (left_1st) { release(left_1st); left_1st = NULL; }
 		if (left_2nd) { release(left_2nd); left_2nd = NULL; }
-		if (right_1st) { release(right_1st); right_1st = NULL; }
-		if (right_2nd) { release(right_2nd); right_2nd = NULL; }
+		// if (right_1st) { release(right_1st); right_1st = NULL; }
+		// if (right_2nd) { release(right_2nd); right_2nd = NULL; }
 		offset_1st = 0;
 		return;
 	}
 	if (left == NULL) {
 		left = allocate();
-		if (left == NULL) {
-			if (right) release(right);
-			return;
-		}
+		// if (left == NULL) {
+		// 	if (right) release(right);
+		// 	return;
+		// }
 		memset(left->data, 0, sizeof(left->data));
 	}
-	if (right == NULL) {
-		right = allocate();
-		if (right == NULL) {
-			release(left);
-			return;
-		}
-		memset(right->data, 0, sizeof(right->data));
-	}
+	// if (right == NULL) {
+	// 	right = allocate();
+	// 	if (right == NULL) {
+	// 		release(left);
+	// 		return;
+	// 	}
+	// 	memset(right->data, 0, sizeof(right->data));
+	// }
 	__disable_irq();
 	if (left_1st == NULL) {
 		left_1st = left;
-		right_1st = right;
+		// right_1st = right;
 		offset_1st = 0;
 	} else if (left_2nd == NULL) {
 		left_2nd = left;
-		right_2nd = right;
+		// right_2nd = right;
 	} else {
 		// buffer overrun - PC is consuming too slowly
 		audio_block_t *discard1 = left_1st;
 		left_1st = left_2nd;
 		left_2nd = left;
-		audio_block_t *discard2 = right_1st;
-		right_1st = right_2nd;
-		right_2nd = right;
+		// audio_block_t *discard2 = right_1st;
+		// right_1st = right_2nd;
+		// right_2nd = right;
 		offset_1st = 0; // TODO: discard part of this data?
 		//serial_print("*");
 		release(discard1);
-		release(discard2);
+		// release(discard2);
 	}
 	serial_print("1");
 	__enable_irq();
@@ -408,7 +409,8 @@ unsigned int usb_audio_transmit_callback(void)
 	serial_print("2");
 
 	uint32_t avail, num, target, offset, len=0;
-	audio_block_t *left, *right;
+	// audio_block_t *left, *right;
+		audio_block_t *left;
 
 	const int ctarget = ((int)(AUDIO_SAMPLE_RATE_EXACT)) / 1000;
 
@@ -439,22 +441,22 @@ unsigned int usb_audio_transmit_callback(void)
 			
 			break; //TODO : It enter this break every time
 		}
-		right = AudioOutputUSB::right_1st;
+		// right = AudioOutputUSB::right_1st;
 		offset = AudioOutputUSB::offset_1st;
 
 		avail = AUDIO_BLOCK_SAMPLES - offset;
 		if (num > avail) num = avail;
 
-		copy_from_buffers((uint32_t *)usb_audio_transmit_buffer + (len*AUDIO_T2USB_CHANNEL_NUMBER/2),	left->data + offset, right->data + offset, num);
+		copy_from_buffers((uint32_t *)usb_audio_transmit_buffer + (len*AUDIO_T2USB_CHANNEL_NUMBER/2),	left->data + offset, left->data + offset, num);
 		len += num;
 		offset += num;
 		if (offset >= AUDIO_BLOCK_SAMPLES) {
 			AudioStream::release(left);
-			AudioStream::release(right);
+			// AudioStream::release(right);
 			AudioOutputUSB::left_1st = AudioOutputUSB::left_2nd;
 			AudioOutputUSB::left_2nd = NULL;
-			AudioOutputUSB::right_1st = AudioOutputUSB::right_2nd;
-			AudioOutputUSB::right_2nd = NULL;
+			// AudioOutputUSB::right_1st = AudioOutputUSB::right_2nd;
+			// AudioOutputUSB::right_2nd = NULL;
 			AudioOutputUSB::offset_1st = 0;
 		} else {
 			AudioOutputUSB::offset_1st = offset;

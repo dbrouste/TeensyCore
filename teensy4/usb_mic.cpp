@@ -305,8 +305,21 @@ void AudioOutputUSBMic::begin(void)
 static void copy_from_buffers(uint32_t *dst, int16_t *left, unsigned int len)
 {
 	// TODO: optimize...
-		while (len > 0) {
-			*dst++ = (*left++ & 0xFFFF);
+	// int i = 0;
+	// 	while (len > 0) {
+	// 		if (i==0) {
+	// 			*dst = ((*left++ << 16) & 0xFFFF0000);
+	// 			i++;
+	// 		}
+	// 		else {
+	// 			*dst++ = (*left++  & 0xFFFF);
+	// 			i = 0;
+	// 		}
+	// 		len--;
+	// 	}
+
+			while (len > 0) {
+			*dst++ =  ( *left++ & 0xFFFF);
 			len--;
 		}
 }
@@ -375,6 +388,7 @@ void AudioOutputUSBMic::update(void)
 		release(discard1);
 		// release(discard2);
 	}
+	serial_print("1");
 	__enable_irq();
 }
 
@@ -385,17 +399,24 @@ void AudioOutputUSBMic::update(void)
 // no data to transmit
 unsigned int usb_mic_transmit_callback(void)
 {
+		serial_print("2");
 	uint32_t avail, num, target, offset, len=0;
 		audio_block_t *left;
 		// audio_block_t *left, *right;
 	const int ctarget = ((int)(AUDIO_SAMPLE_RATE_EXACT)) / 1000;
 
-    if ((int)(AUDIO_SAMPLE_RATE_EXACT) == 44100 || (int)(AUDIO_SAMPLE_RATE_EXACT) == 88200 ||  (int)(AUDIO_SAMPLE_RATE_EXACT) == 176400) 
+    if ((int)(AUDIO_SAMPLE_RATE_EXACT) == 44100 ||
+	    (int)(AUDIO_SAMPLE_RATE_EXACT) == 88200 || //TODO : don't think this is working for 88.2 or 176.4
+	    (int)(AUDIO_SAMPLE_RATE_EXACT) == 176400) 
 	{
 		static uint32_t count = 0;
-		if (++count < 10) {
+
+		if (++count < 10) //allow to get the 0.1kHz (in 44.1)
+		{ 
 			target = ctarget;
-		} else {
+		} 
+		else 
+		{
 			target = ctarget + 1;
 			count = 0;
 		}
@@ -408,7 +429,7 @@ unsigned int usb_mic_transmit_callback(void)
 
 		if (left == NULL) {
 			// buffer underrun - PC is consuming too quickly
-			memset(usb_mic_transmit_buffer + len, 0, num * 4);
+			memset(usb_mic_transmit_buffer + (len), 0, num * 4);
 			serial_print("%");
 			break;
 		}
@@ -421,7 +442,7 @@ unsigned int usb_mic_transmit_callback(void)
  //digitalWrite(13,HIGH);
  	// Serial1.write(num);
 	//  serial_print(".");
-		copy_from_buffers((uint32_t *)usb_mic_transmit_buffer + len,left->data + offset, num);
+		copy_from_buffers((uint32_t *)usb_mic_transmit_buffer + (len),left->data + offset, num);
 		// copy_from_buffers((uint32_t *)usb_mic_transmit_buffer + len,left->data + offset, right->data + offset, num);
 		len += num;
 		offset += num;

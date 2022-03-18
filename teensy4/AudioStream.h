@@ -52,7 +52,7 @@
 
 
 #ifndef AUDIO_BLOCK_SAMPLES
-#define AUDIO_BLOCK_SAMPLES  128
+#define AUDIO_BLOCK_SAMPLES  193
 #endif
 
 #ifndef AUDIO_SAMPLE_RATE_EXACT
@@ -60,12 +60,7 @@
 #endif
 
 #ifndef AUDIO_T2USB_CHANNEL_NUMBER
-#if defined(AUDIO_INTERFACE)
 #define AUDIO_T2USB_CHANNEL_NUMBER 2
-#endif
-#if defined(USB_MIC_INTERFACE)
-#define AUDIO_T2USB_CHANNEL_NUMBER 1
-#endif
 #endif
 
 #ifndef AUDIO_T2USB_BYTE_NUMBER
