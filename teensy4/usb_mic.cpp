@@ -286,12 +286,12 @@ uint16_t AudioOutputUSBMic::offset_1st;
 
 static void txmic_event(transfer_t *t)
 {
+	// serial_print("1");
 	int len = usb_mic_transmit_callback();
 	// usb_mic_sync_feedback = feedback_accumulator >> usb_mic_sync_rshift;
 	usb_prepare_transfer(&tx_transfer, usb_mic_transmit_buffer, len, 0);
 	arm_dcache_flush_delete(usb_mic_transmit_buffer, len);
 	usb_transmit_mic(AUDIO_TX_ENDPOINT, &tx_transfer);
-	serial_print("7");
 }
 
 
@@ -305,15 +305,10 @@ void AudioOutputUSBMic::begin(void)
 static void copy_from_buffers(uint32_t *dst, int16_t *left, unsigned int len)
 {
 	// TODO: optimize...
-	int16_t temp1 = 0;
-	int16_t temp2 = 0;
-	
-	while (len > 0) {
-		temp1 = *left++;
-		temp2 = *left++;
-		*dst++ = (temp1 << 16) | (temp2 & 0xFFFF);
-		len--;len--;
-	}
+		while (len > 0) {
+			*dst++ = (*left++ & 0xFFFF);
+			len--;
+		}
 }
 
 void AudioOutputUSBMic::update(void)
@@ -360,7 +355,7 @@ void AudioOutputUSBMic::update(void)
 	__disable_irq();
 	if (left_1st == NULL) {
 		left_1st = left;
-		serial_print("5");
+		// serial_print("5");
 		// right_1st = right;
 		offset_1st = 0;
 	} else if (left_2nd == NULL) {
@@ -368,7 +363,7 @@ void AudioOutputUSBMic::update(void)
 		// right_2nd = right;
 	} else {
 		// buffer overrun - PC is consuming too slowly
-		// serial_print("z");
+		serial_print("z");
 		audio_block_t *discard1 = left_1st;
 		left_1st = left_2nd;
 		left_2nd = left;
@@ -380,7 +375,6 @@ void AudioOutputUSBMic::update(void)
 		release(discard1);
 		// release(discard2);
 	}
-	// serial_print("1");
 	__enable_irq();
 }
 
@@ -391,7 +385,6 @@ void AudioOutputUSBMic::update(void)
 // no data to transmit
 unsigned int usb_mic_transmit_callback(void)
 {
-// serial_print("2");
 	uint32_t avail, num, target, offset, len=0;
 		audio_block_t *left;
 		// audio_block_t *left, *right;
@@ -409,14 +402,14 @@ unsigned int usb_mic_transmit_callback(void)
 	} else target = ctarget;
 
 	while (len < target) {
-		
+
 		num = target - len;
 		left = AudioOutputUSBMic::left_1st;
 
 		if (left == NULL) {
 			// buffer underrun - PC is consuming too quickly
-			memset(usb_mic_transmit_buffer + (len*AUDIO_T2USB_CHANNEL_NUMBER/2), 0, num * AUDIO_T2USB_BYTE_NUMBER * AUDIO_T2USB_CHANNEL_NUMBER);
-			//serial_print("%");
+			memset(usb_mic_transmit_buffer + len, 0, num * 4);
+			serial_print("%");
 			break;
 		}
 		//digitalWrite(13,HIGH); no
@@ -426,7 +419,9 @@ unsigned int usb_mic_transmit_callback(void)
 		avail = AUDIO_BLOCK_SAMPLES - offset;
 		if (num > avail) num = avail;
  //digitalWrite(13,HIGH);
-		copy_from_buffers((uint32_t *)usb_mic_transmit_buffer + (len*AUDIO_T2USB_CHANNEL_NUMBER/2),left->data + offset, num);
+ 	// Serial1.write(num);
+	//  serial_print(".");
+		copy_from_buffers((uint32_t *)usb_mic_transmit_buffer + len,left->data + offset, num);
 		// copy_from_buffers((uint32_t *)usb_mic_transmit_buffer + len,left->data + offset, right->data + offset, num);
 		len += num;
 		offset += num;
@@ -442,7 +437,8 @@ unsigned int usb_mic_transmit_callback(void)
 			AudioOutputUSBMic::offset_1st = offset;
 		}
 	}
-	return target * AUDIO_T2USB_BYTE_NUMBER * AUDIO_T2USB_CHANNEL_NUMBER;
+		// serial_print("5");
+	return target * 4;
 }
 #endif
 

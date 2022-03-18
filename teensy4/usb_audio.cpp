@@ -112,7 +112,7 @@ void usb_audio_configure(void)
 	memset(&tx_transfer, 0, sizeof(tx_transfer));
 	usb_config_tx_iso(AUDIO_TX_ENDPOINT, AUDIO_TX_SIZE, 1, tx_event);
 	tx_event(NULL);
-	serial_print("7");
+	// serial_print("7");
 }
 
 // void AudioInputUSB::begin(void)
@@ -315,6 +315,7 @@ void AudioOutputUSB::begin(void)
 	update_responsibility = false;
 	left_1st = NULL;
 	right_1st = NULL;
+
 }
 
 static void copy_from_buffers(uint32_t *dst, int16_t *left, int16_t *right, unsigned int len)
@@ -329,14 +330,9 @@ static void copy_from_buffers(uint32_t *dst, int16_t *left, int16_t *right, unsi
 	}
 	else
 	{
-		int16_t temp1 = 0;
-		int16_t temp2 = 0;
-		
 		while (len > 0) {
-			temp1 = *left++;
-			temp2 = *left++;
-			*dst++ = (temp1 << 16) | (temp2 & 0xFFFF);
-			len--;len--;
+			*dst++ = (*left++ & 0xFFFF);
+			len--;
 		}
 	}
 }
@@ -398,7 +394,7 @@ void AudioOutputUSB::update(void)
 		release(discard1);
 		release(discard2);
 	}
-	// serial_print("1");
+	serial_print("1");
 	__enable_irq();
 }
 
@@ -409,7 +405,7 @@ void AudioOutputUSB::update(void)
 // no data to transmit
 unsigned int usb_audio_transmit_callback(void)
 {
-	// serial_print("2");
+	serial_print("2");
 
 	uint32_t avail, num, target, offset, len=0;
 	audio_block_t *left, *right;
@@ -438,7 +434,7 @@ unsigned int usb_audio_transmit_callback(void)
 		left = AudioOutputUSB::left_1st;
 		if (left == NULL) {
 			// buffer underrun - PC is consuming too quickly
-			memset(usb_audio_transmit_buffer + (len*AUDIO_T2USB_CHANNEL_NUMBER/2), 0, num * AUDIO_T2USB_BYTE_NUMBER *AUDIO_T2USB_CHANNEL_NUMBER);
+			memset(usb_audio_transmit_buffer + len, 0, num * AUDIO_T2USB_BYTE_NUMBER *AUDIO_T2USB_CHANNEL_NUMBER);
 			serial_print("%");
 			
 			break; //TODO : It enter this break every time

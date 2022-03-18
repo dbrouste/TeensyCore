@@ -312,6 +312,7 @@ AudioStream * AudioStream::first_update = NULL;
 void software_isr(void) // AudioStream::update_all()
 {
 	AudioStream *p;
+	// serial_print("a");
 
 	uint32_t totalcycles = ARM_DWT_CYCCNT;
 	//digitalWriteFast(2, HIGH);

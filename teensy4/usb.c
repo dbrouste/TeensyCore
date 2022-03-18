@@ -240,7 +240,7 @@ FLASHMEM void _reboot_Teensyduino_(void)
 void usb_isr(void)
 {
 	// printf("*");
-	serial_print("*");
+	// serial_print("*");
 
 	//  Port control in device mode is only used for
 	//  status port reset, suspend, and current connect status.
@@ -436,6 +436,9 @@ static void endpoint0_setup(uint64_t setupdata)
 	  case 0x0900: // SET_CONFIGURATION
 		usb_configuration = setup.wValue;
 		// configure all other endpoints
+		#if defined(ENDPOINT1_CONFIG)
+		USB1_ENDPTCTRL1 = ENDPOINT1_CONFIG;
+		#endif
 		#if defined(ENDPOINT2_CONFIG)
 		USB1_ENDPTCTRL2 = ENDPOINT2_CONFIG;
 		#endif
