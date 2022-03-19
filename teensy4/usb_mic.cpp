@@ -317,11 +317,23 @@ static void copy_from_buffers(uint32_t *dst, int16_t *left, unsigned int len)
 	// 		}
 	// 		len--;
 	// 	}
-
+			int16_t temp_cfb=0;
 			while (len > 0) {
-			*dst++ =  ( *left++ & 0xFFFF);
+			temp_cfb = *left++;
+			*dst++ =  (temp_cfb << 16) | ( temp_cfb & 0xFFFF);
 			len--;
 		}
+		// 	int16_t temp_cfb=0;
+		// 	while (len > 0) {
+		// 	temp_cfb = *left++;
+		// 	*dst++ =  ( temp_cfb & 0xFFFF);
+		// 	len--;
+		// }
+
+		// 	while (len > 0) {
+		// 	*dst++ =  ( *left++ & 0xFFFF);
+		// 	len--;
+		// }
 }
 
 void AudioOutputUSBMic::update(void)
