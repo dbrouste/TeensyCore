@@ -306,6 +306,7 @@ static void copy_from_buffers(uint32_t *dst, int16_t *left, unsigned int len)
 {
 	// TODO: optimize...
 	// int i = 0;
+
 	// 	while (len > 0) {
 	// 		if (i==0) {
 	// 			*dst = ((*left++ << 16) & 0xFFFF0000);
@@ -317,12 +318,12 @@ static void copy_from_buffers(uint32_t *dst, int16_t *left, unsigned int len)
 	// 		}
 	// 		len--;
 	// 	}
-			int16_t temp_cfb=0;
-			while (len > 0) {
-			temp_cfb = *left++;
-			*dst++ =  (temp_cfb << 16) | ( temp_cfb & 0xFFFF);
-			len--;
-		}
+		// 	int16_t temp_cfb=0;
+		// 	while (len > 0) {
+		// 	temp_cfb = *left++;
+		// 	*dst++ =  (temp_cfb << 16) | ( temp_cfb & 0xFFFF);
+		// 	len--;
+		// }
 		// 	int16_t temp_cfb=0;
 		// 	while (len > 0) {
 		// 	temp_cfb = *left++;
@@ -334,6 +335,17 @@ static void copy_from_buffers(uint32_t *dst, int16_t *left, unsigned int len)
 		// 	*dst++ =  ( *left++ & 0xFFFF);
 		// 	len--;
 		// }
+
+		//
+		int16_t temp1 = 0;
+		int16_t temp2 = 0;
+
+		while (len > 0) {
+			temp1 = *left++;
+			temp2 = *left++;
+			*dst++ = (temp1 << 16) | ( temp2 & 0xFFFF);
+			len--;len--;
+		}
 }
 
 void AudioOutputUSBMic::update(void)
@@ -423,7 +435,7 @@ unsigned int usb_mic_transmit_callback(void)
 	{
 		static uint32_t count = 0;
 
-		if (++count < 10) //allow to get the 0.1kHz (in 44.1)
+		if (++count < 10) //allow to get the 0.1kHz (for 44.1kHz)
 		{ 
 			target = ctarget;
 		} 
@@ -441,7 +453,7 @@ unsigned int usb_mic_transmit_callback(void)
 
 		if (left == NULL) {
 			// buffer underrun - PC is consuming too quickly
-			memset(usb_mic_transmit_buffer + (len), 0, num * 4);
+			memset(usb_mic_transmit_buffer + (len), 0, num * 2);
 			serial_print("%");
 			break;
 		}
@@ -457,6 +469,12 @@ unsigned int usb_mic_transmit_callback(void)
 		copy_from_buffers((uint32_t *)usb_mic_transmit_buffer + (len),left->data + offset, num);
 		// copy_from_buffers((uint32_t *)usb_mic_transmit_buffer + len,left->data + offset, right->data + offset, num);
 		len += num;
+
+	  if ( len % 2 == 0)
+    serial_print("e");
+  else
+    serial_print("d");
+
 		offset += num;
 		if (offset >= AUDIO_BLOCK_SAMPLES) {
 			AudioStream::release(left);
@@ -471,7 +489,7 @@ unsigned int usb_mic_transmit_callback(void)
 		}
 	}
 		// serial_print("5");
-	return target * 4;
+	return target * 2;
 }
 #endif
 

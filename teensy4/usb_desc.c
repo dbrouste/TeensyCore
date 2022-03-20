@@ -1654,7 +1654,7 @@ USB_MIC_INTERFACE,        // baInterfaceNr(1) = AudioStreaming interface 1 belon
 0x01,0x02,      // wTerminalType = Terminal is Microphone. 0x0201
 0x00,        // bAssocTerminal = No association.
 AUDIO_T2USB_CHANNEL_NUMBER,        // bNrChannels = One channel.
-0x03,0x00,      // wChannelConfig = Mono sets no position bits.
+0x00,0x00,      // wChannelConfig = Mono sets no position bits.
 0x00,        // iChannelNames = Unused.
 0x00,        // iTerminal = Unused
 
@@ -2803,7 +2803,7 @@ USB_MIC_INTERFACE,        // baInterfaceNr(1) = AudioStreaming interface 1 belon
 0x01, 0x02,      // wTerminalType = Terminal is Microphone.
 0x00,        // bAssocTerminal = No association.
 AUDIO_T2USB_CHANNEL_NUMBER,        // bNrChannels = One channel.
-0x03,0x00,      // wChannelConfig = Mono sets no position bits.
+0x00,0x00,      // wChannelConfig = Mono sets no position bits.
 0x00,        // iChannelNames = Unused.
 0x00,        // iTerminal = Unused
 
