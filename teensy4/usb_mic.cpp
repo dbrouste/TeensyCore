@@ -286,7 +286,7 @@ uint16_t AudioOutputUSBMic::offset_1st;
 
 static void txmic_event(transfer_t *t)
 {
-	// serial_print("1");
+	serial_print("t");
 	int len = usb_mic_transmit_callback();
 	// usb_mic_sync_feedback = feedback_accumulator >> usb_mic_sync_rshift;
 	usb_prepare_transfer(&tx_transfer, usb_mic_transmit_buffer, len, 0);

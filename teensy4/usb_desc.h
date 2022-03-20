@@ -111,9 +111,9 @@ let me know?  http://forum.pjrc.com/forums/4-Suggestions-amp-Bug-Reports
 */
 
 #if  defined(USB_MIC)
-  #define VENDOR_ID		           0x16C0
-  #define PRODUCT_ID		       0x02D7
-  #define BCD_DEVICE		       0x0312
+  #define VENDOR_ID		           0x12C1
+  #define PRODUCT_ID		       0x08D8
+  #define BCD_DEVICE		       0x0421
   #define MANUFACTURER_NAME	       {'T','e','e','n','s','y','d','u','i','n','o'}
   #define MANUFACTURER_NAME_LEN	   11
   #define PRODUCT_NAME		       {'T','e','e','n','s','y','D','M','i','c','r','o'}
