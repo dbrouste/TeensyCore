@@ -343,7 +343,7 @@ static void copy_from_buffers(uint32_t *dst, int16_t *left, unsigned int len)
 		while (len > 0) {
 			temp1 = *left++;
 			temp2 = *left++;
-			*dst++ = (temp1 << 16) | ( temp2 & 0xFFFF);
+			*dst++ = (temp2 << 16) | ( temp1 & 0xFFFF);
 			len--;len--;
 		}
 }
