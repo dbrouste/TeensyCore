@@ -286,7 +286,7 @@ uint16_t AudioOutputUSBMic::offset_1st;
 
 static void txmic_event(transfer_t *t)
 {
-	serial_print("t");
+	// serial_print("t");
 	int len = usb_mic_transmit_callback();
 	// usb_mic_sync_feedback = feedback_accumulator >> usb_mic_sync_rshift;
 	usb_prepare_transfer(&tx_transfer, usb_mic_transmit_buffer, len, 0);
@@ -412,7 +412,7 @@ void AudioOutputUSBMic::update(void)
 		release(discard1);
 		// release(discard2);
 	}
-	serial_print("1");
+	// serial_print("1");
 	__enable_irq();
 }
 
@@ -423,7 +423,7 @@ void AudioOutputUSBMic::update(void)
 // no data to transmit
 unsigned int usb_mic_transmit_callback(void)
 {
-		serial_print("2");
+		// serial_print("2");
 	uint32_t avail, num, target, offset, len=0;
 		audio_block_t *left;
 		// audio_block_t *left, *right;
@@ -470,10 +470,10 @@ unsigned int usb_mic_transmit_callback(void)
 		// copy_from_buffers((uint32_t *)usb_mic_transmit_buffer + len,left->data + offset, right->data + offset, num);
 		len += num;
 
-	  if ( len % 2 == 0)
-    serial_print("e");
-  else
-    serial_print("d");
+// 	  if ( len % 2 == 0)
+//     serial_print("e");
+//   else
+//     serial_print("d");
 
 		offset += num;
 		if (offset >= AUDIO_BLOCK_SAMPLES) {
